@@ -1,0 +1,35 @@
+{
+  "name": "sample-nodeapp",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "acceptance-test": "jest ./acceptance-test",
+    "test": "jest ./test"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "debug": "~2.6.9",
+    "ejs": "^3.1.7",
+    "express": "~4.17.0",
+    "express-session": "^1.17.1",
+    "helmet": "^4.6.0",
+    "http-errors": "~1.6.3",
+    "jest": "^28.1.1",
+    "morgan": "~1.9.1",
+    "nocache": "^3.0.1",
+    "passport": "^0.6.0",
+    "passport-http": "^0.3.0",
+    "passport-http-bearer": "^1.0.1",
+    "passport-local": "^1.0.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "ansi-regex": "^6.0.1",
+    "axios": "^0.24.0",
+    "mpath": "^0.8.4"
+  }
+}
