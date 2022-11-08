@@ -37,41 +37,6 @@ params=(
 )
 
 #
-# add the deployment file as a build artifact to the inventory
-#
-APP_TOKEN_PATH="./app-token"
-read -r APP_REPO_NAME APP_REPO_OWNER APP_SCM_TYPE APP_API_URL < <(get_repo_params "$(get_env APP_REPO)" "$APP_TOKEN_PATH")
-token=$(cat $APP_TOKEN_PATH)
-
-function upload_deployment_files_artifacts() {
-
-    deployment_file=$1
-    deployment_type=$2
-    if [ "$APP_ABSOLUTE_SCM_TYPE" == "hostedgit" ]; then
-        id=$(curl --header "PRIVATE-TOKEN: ${token}" ${APP_API_URL}/projects/${APP_REPO_ORG}%2F${APP_REPO_NAME} | jq .id)
-        DEPLOYMENT_ARTIFACT="${APP_API_URL}/projects/${id}/repository/files/${deployment_file}/raw?ref=${COMMIT_SHA}"
-    elif [ "$APP_ABSOLUTE_SCM_TYPE" == "github_integrated" ]; then
-        DEPLOYMENT_ARTIFACT="https://raw.github.ibm.com/${APP_REPO_ORG}/${APP_REPO_NAME}/${COMMIT_SHA}/${deployment_file}"
-    else
-        DEPLOYMENT_ARTIFACT="https://raw.githubusercontent.com/${APP_REPO_ORG}/${APP_REPO_NAME}/${COMMIT_SHA}/${deployment_file}"
-    fi
-    DEPLOYMENT_ARTIFACT_PATH="$(load_repo app-repo path)"
-    DEPLOYMENT_ARTIFACT_DIGEST="$(shasum -a256 "${WORKSPACE}/${DEPLOYMENT_ARTIFACT_PATH}/${deployment_file}" | awk '{print $1}')"
-
-    cocoa inventory add \
-        --artifact="${DEPLOYMENT_ARTIFACT}" \
-        --type="deployment" \
-        --sha256="${DEPLOYMENT_ARTIFACT_DIGEST}" \
-        --signature="${DEPLOYMENT_ARTIFACT_DIGEST}" \
-        --name="${APP_REPO_NAME}_${deployment_type}_deployment" \
-        "${params[@]}"
-
-}
-upload_deployment_files_artifacts deployment_iks.yml IKS
-upload_deployment_files_artifacts deployment_os.yml OPENSHIFT
-
-
-#
 # add all built images as build artifacts to the inventory
 #
 while read -r artifact; do

@@ -2,23 +2,6 @@
 
 # shellcheck source=/dev/null
 source "${ONE_PIPELINE_PATH}"/tools/retry
-export IBMCLOUD_API_KEY
-export IBMCLOUD_TOOLCHAIN_ID
-export IBMCLOUD_IKS_REGION
-export IBMCLOUD_IKS_CLUSTER_NAME
-export IBMCLOUD_IKS_CLUSTER_ID
-export IBMCLOUD_IKS_CLUSTER_NAMESPACE
-export REGISTRY_URL
-export IMAGE_PULL_SECRET_NAME
-export IMAGE
-export DIGEST
-export HOME
-export BREAK_GLASS
-export CLUSTER_INGRESS_SUBDOMAIN
-export CLUSTER_INGRESS_SECRET
-export DEPLOYMENT_FILE
-export CLUSTER_TYPE
-export TEMP_DEPLOYMENT_FILE
 
 if [ -f /config/api-key ]; then
   IBMCLOUD_API_KEY="$(cat /config/api-key)" # pragma: allowlist secret
@@ -26,61 +9,58 @@ else
   IBMCLOUD_API_KEY="$(get_env ibmcloud-api-key)" # pragma: allowlist secret
 fi
 
-IBMCLOUD_API=$(get_env ibmcloud-api "https://cloud.ibm.com")
-HOME=/root
 IBMCLOUD_TOOLCHAIN_ID="$(jq -r .toolchain_guid /toolchain/toolchain.json)"
-IBMCLOUD_IKS_REGION="$(get_env dev-region | awk -F ":" '{print $NF}')"
-IBMCLOUD_IKS_CLUSTER_NAMESPACE="$(get_env dev-cluster-namespace)"
-IBMCLOUD_IKS_CLUSTER_NAME="$(get_env cluster-name)"
-REGISTRY_URL="$(load_artifact app-image name| awk -F/ '{print $1}')"
+IBMCLOUD_CE_REGION="$(get_env dev-region | awk -F ":" '{print $NF}')"
+if [ -z "$IBMCLOUD_CE_REGION" ];
+  # default to toolchain region
+  IBMCLOUD_CE_REGION=$(jq -r '.region_id' /toolchain/toolchain.json | awk -F: '{print $3}')
+fi
+
+REGISTRY_URL="$(load_artifact app-image name | awk -F/ '{print $1}')"
 IMAGE="$(load_artifact app-image name)"
 DIGEST="$(load_artifact app-image digest)"
 IMAGE_PULL_SECRET_NAME="ibmcloud-toolchain-${IBMCLOUD_TOOLCHAIN_ID}-${REGISTRY_URL}"
-DEPLOYMENT_FILE="$(cat /config/deployment-file)"
-CLUSTER_TYPE="IKS"
-TEMP_DEPLOYMENT_FILE="temp.yml"
 
-if [[ -f "/config/break_glass" ]]; then
-  export KUBECONFIG
-  KUBECONFIG=/config/cluster-cert
+# SETUP BEGIN
+ibmcloud config --check-version false
+retry 5 2 \
+  ibmcloud login -a $(get_env ibmcloud-api "https://cloud.ibm.com") -r $IBMCLOUD_CE_REGION --apikey $IBMCLOUD_API_KEY
+
+ibmcloud target -g "$(get_env resource-group)"
+
+# Make sure that the latest version of Code Engine CLI is installed
+if ! ibmcloud plugin show code-engine >/dev/null 2>&1; then
+    ibmcloud plugin install code-engine
 else
-  IBMCLOUD_IKS_REGION=$(echo "${IBMCLOUD_IKS_REGION}" | awk -F ":" '{print $NF}')
-  ibmcloud config --check-version false
-  retry 5 2 \
-    ibmcloud login -r "${IBMCLOUD_IKS_REGION}" -a "$IBMCLOUD_API"
-
-  retry 5 2 \
-    ibmcloud ks cluster config --cluster "${IBMCLOUD_IKS_CLUSTER_NAME}"
-
-
-  ibmcloud ks cluster get --cluster "${IBMCLOUD_IKS_CLUSTER_NAME}" --json > "${IBMCLOUD_IKS_CLUSTER_NAME}.json"
-  IBMCLOUD_IKS_CLUSTER_ID=$(jq -r '.id' "${IBMCLOUD_IKS_CLUSTER_NAME}.json")
-
-  if [ "$(kubectl config current-context)" != "${IBMCLOUD_IKS_CLUSTER_NAME}"/"${IBMCLOUD_IKS_CLUSTER_ID}" ]; then
-    echo "ERROR: Unable to connect to the Kubernetes cluster."
-    echo "Consider checking that the cluster is available with the following command: \"ibmcloud ks cluster get --cluster ${IBMCLOUD_IKS_CLUSTER_NAME}\""
-    echo "If the cluster is available check that that kubectl is properly configured by getting the cluster state with this command: \"kubectl cluster-info\""
-    exit 1
-  fi
-
-
-  # If the target cluster is openshift then make the appropriate additional login with oc tool
-  if which oc > /dev/null && jq -e '.type=="openshift"' "${IBMCLOUD_IKS_CLUSTER_NAME}.json" > /dev/null; then
-    echo "${IBMCLOUD_IKS_CLUSTER_NAME} is an openshift cluster. Doing the appropriate oc login to target it"
-    oc login -u apikey -p "${IBMCLOUD_API_KEY}"
-     CLUSTER_TYPE="OPENSHIFT"
-  fi
+    ibmcloud plugin update code-engine --force
 fi
 
-if [ -z "${DEPLOYMENT_FILE}" ]; then
-  echo "deployment-file environment is not defined."
-  if [ "${CLUSTER_TYPE}" == "OPENSHIFT" ]; then
-    DEPLOYMENT_FILE="deployment_os.yml"
-  else
-    DEPLOYMENT_FILE="deployment_iks.yml"
-  fi
-   
-  set_env "deployment-file" "$DEPLOYMENT_FILE"    
-  set_env "cluster-type" "$CLUSTER_TYPE"
-  echo "deployment-file is ${DEPLOYMENT_FILE}"
+echo "Check Code Engine project availability"
+if ibmcloud ce proj get -n $(get_env code-engine-project); then
+    echo -e "Code Engine project $(get_env code-engine-project) found."
+else
+    echo -e "No Code Engine project with the name $(get_env code-engine-project) found. Creating new project..."
+    ibmcloud ce proj create -n $(get_env code-engine-project)
+    echo -e "Code Engine project $(get_env code-engine-project) created."
+fi
+
+echo "Loading Kube config..."
+ibmcloud ce proj select -n $(get_env code-engine-project) -k
+
+RG_NAME=$(ibmcloud resource groups --output json | jq '.[] | select(.id=="$(get_env resource-group)") | .name')
+# check to see if "$(get_env resource-group)" is a name or an ID
+if [ "${RG_NAME}" == "" ]; then
+  RG_NAME="$(get_env resource-group)"
+fi
+# check to see if $RG_NAME is not the default resource group
+if [ $(ibmcloud resource groups --output json | jq '.[] | select(.name=="$RG_NAME") | .default') == 'false' ]; then
+  echo "Updating Code Engine project to bind to resource group $RG_NAME..."
+  ibmcloud ce project update --binding-resource-group "$RG_NAME"
+fi
+
+echo -e "Configuring access to private image registry"
+if ! kubectl get secret ${IMAGE_PULL_SECRET_NAME}; then
+    echo -e "${IMAGE_PULL_SECRET_NAME} not found, creating it"
+    # for Container Registry, docker username is 'token' and email does not matter
+    kubectl create secret docker-registry ${IMAGE_PULL_SECRET_NAME} --docker-server=${REGISTRY_URL} --docker-password=${IBMCLOUD_API_KEY} --docker-username=iamapikey --docker-email=a@b.com
 fi

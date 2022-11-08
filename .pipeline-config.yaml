@@ -10,7 +10,7 @@ setup:
       set -x
     fi
     if [[ "$(get_env pipeline_namespace)" == *"pr"* ||  "$(get_env pipeline_namespace)" == *"ci"* ]]; then
-      source scripts/code_setup.sh
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/code_setup.sh"
     fi
 
 test:
@@ -19,12 +19,12 @@ test:
   script: |
     #!/usr/bin/env bash
 
-    cd ../"$(load_repo app-repo path)"
-    npm ci
+    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+    #npm ci
 
     # save exit code for old evidence collection
     exit_code=0
-    npm test || exit_code=$?
+    #npm test || exit_code=$?
     
     # save status for new evidence collection
     status="success"
@@ -52,8 +52,10 @@ containerize:
       set -x
     fi
 
-    source scripts/build_setup.sh
-    source scripts/build.sh
+    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+
+    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_setup.sh"
+    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build.sh"
 
 deploy:
   image: icr.io/continuous-delivery/pipeline/pipeline-base-image:2.19@sha256:482d28e51d5acc65471b366bbdcabc97f69e49da933337a7c42f45907cd63173
@@ -66,8 +68,10 @@ deploy:
       set -x
     fi
 
-    source scripts/deploy_setup.sh
-    source scripts/deploy.sh
+    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+
+    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
+    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
 
 acceptance-test:
   abort_on_failure: false
@@ -75,11 +79,13 @@ acceptance-test:
   script: |
     #!/usr/bin/env bash
 
-    npm ci
+    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+
+    #npm ci
     export APP_URL=$(get_env app-url)
     # save exit code for old evidence collection
     exit_code=0
-    npm run acceptance-test || exit_code=$?
+    #npm run acceptance-test || exit_code=$?
     
     # save status for new evidence collection
     status="success"
@@ -107,7 +113,9 @@ release:
       set -x
     fi
 
-    source scripts/release.sh
+    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+
+    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/release.sh"
 
 dynamic-scan:
   dind: true
@@ -115,6 +123,9 @@ dynamic-scan:
   image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.7@sha256:0444aa3cc5032ba4d7f7a59a4177dd43dc1126ad902f09079b0a66156bbe4bcf
   script: |
     #!/usr/bin/env bash
+
+    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+
     if [ -z "$(get_env opt-in-dynamic-scan "")" ]; then
       echo "If you want to enable this stage, add 'opt-in-dynamic-scan' parameter to your pipeline with any value. Also, please add 'opt-in-dynamic-api-scan' to your pipeline with any value to have api scans running, and 'opt-in-dynamic-ui-scan' with any value to have ui scans running" >&2
     else
@@ -124,9 +135,9 @@ dynamic-scan:
           echo "Please provide the app-url as the running application url. Recommended to use stage/test environment to run the Dynamic scan." >&2
           exit 1
         fi
-        source scripts/zap/zap-cc-config
+        source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/zap/zap-cc-config"
       fi
-      source scripts/zap/trigger-async-zap
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/zap/trigger-async-zap"
     fi
 
 owasp-zap:
@@ -136,4 +147,6 @@ owasp-zap:
   script: |
     #!/usr/bin/env bash
 
-    source scripts/zap/trigger_zap_scans
+    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+
+    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/zap/trigger_zap_scans"
