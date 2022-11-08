@@ -6,22 +6,22 @@ if ibmcloud ce app get -n $(get_env app-name) | grep Age; then
         -i ${IMAGE} \
         --rs ${IMAGE_PULL_SECRET_NAME} \
         -w=false \
-        --cpu $(get_env cpu) \
-        --max $(get_env max-scale) \
-        --min $(get_env min-scale) \
-        -m $(get_env memory) \
-        -p $(get_env port)
+        --cpu $(get_env cpu "0.25") \
+        --max $(get_env max-scale "1") \
+        --min $(get_env min-scale "0") \
+        -m $(get_env memory "0.5G") \
+        -p $(get_env port "http1:8080")
 else
     echo "Code Engine app with name $(get_env app-name) not found, creating it"
     ibmcloud ce app create -n $(get_env app-name) \
         -i ${IMAGE} \
         --rs ${IMAGE_PULL_SECRET_NAME} \
         -w=false \
-        --cpu $(get_env cpu) \
-        --max $(get_env max-scale) \
-        --min $(get_env min-scale) \
-        -m $(get_env memory) \
-        -p $(get_env port)
+        --cpu $(get_env cpu "0.25") \
+        --max $(get_env max-scale "1") \
+        --min $(get_env min-scale "0") \
+        -m $(get_env memory "0.5G") \
+        -p $(get_env port "http1:8080")
 fi
 # Bind services, if any
 while read; do
