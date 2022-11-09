@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 echo "Deploying your code as Code Engine application...."
-if ibmcloud ce app get -n "$(get_env app-name)" | grep Age; then
+if ibmcloud ce app get -n "$(get_env app-name)" >/dev/null 2>&1; then
     echo "Code Engine app with name $(get_env app-name) found, updating it"
     ibmcloud ce app update -n "$(get_env app-name)" \
         -i "${IMAGE}" \

@@ -39,7 +39,7 @@ else
 fi
 
 echo "Check Code Engine project availability"
-if ibmcloud ce proj get -n "$(get_env code-engine-project)"; then
+if ibmcloud ce proj get -n "$(get_env code-engine-project)" >/dev/null 2>&1; then
     echo -e "Code Engine project $(get_env code-engine-project) found."
 else
     echo -e "No Code Engine project with the name $(get_env code-engine-project) found. Creating new project..."
