@@ -50,7 +50,10 @@ else
 fi
 
 echo "Loading Kube config..."
-ibmcloud ce proj select -n "$(get_env code-engine-project)" -k
+if ! ibmcloud ce proj select -n "$(get_env code-engine-project)" -k; then 
+  echo "Code Engine project $(get_env code-engine-project) can not be selected. Exiting 1"
+  exit 1
+fi
 
 RG_NAME=$(ibmcloud resource groups --output json | jq '.[] | select(.id=="$(get_env code-engine-resource-group)") | .name')
 # check to see if "$(get_env code-engine-resource-group)" is a name or an ID
