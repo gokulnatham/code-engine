@@ -34,7 +34,7 @@ while read; do
 done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
 echo "Checking if application is ready..."
 KUBE_SERVICE_NAME=$(get_env app-name)
-DEPLOYMENT_TIMEOUT=$(get_env deployment-timeout)
+DEPLOYMENT_TIMEOUT=$(get_env deployment-timeout "300")
 echo "Timeout for the application deployment is ${DEPLOYMENT_TIMEOUT}"
 ITERATION=0
 while [[ "${ITERATION}" -le "${DEPLOYMENT_TIMEOUT}" ]]; do
