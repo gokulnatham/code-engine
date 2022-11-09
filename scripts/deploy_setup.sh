@@ -32,14 +32,16 @@ retry 5 2 \
 ibmcloud target -g "$(get_env code-engine-resource-group)"
 
 # Make sure that the latest version of Code Engine CLI is installed
-if ! ibmcloud plugin show code-engine >/dev/null 2>&1; then
+if ! ibmcloud plugin show code-engine > /dev/null 2>&1; then
+    echo "Installing code-engine plugin"
     ibmcloud plugin install code-engine
 else
+    echo "Updating code-engine plugin"
     ibmcloud plugin update code-engine --force
 fi
 
 echo "Check Code Engine project availability"
-if ibmcloud ce proj get -n "$(get_env code-engine-project)" >/dev/null 2>&1; then
+if ibmcloud ce proj get -n "$(get_env code-engine-project)" > /dev/null 2>&1; then
     echo -e "Code Engine project $(get_env code-engine-project) found."
 else
     echo -e "No Code Engine project with the name $(get_env code-engine-project) found. Creating new project..."
