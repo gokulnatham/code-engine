@@ -10,7 +10,7 @@ else
 fi
 
 IBMCLOUD_TOOLCHAIN_ID="$(jq -r .toolchain_guid /toolchain/toolchain.json)"
-IBMCLOUD_CE_REGION="$(get_env dev-region | awk -F ":" '{print $NF}')"
+IBMCLOUD_CE_REGION="$(get_env code-engine-region | awk -F ":" '{print $NF}')"
 if [ -z "$IBMCLOUD_CE_REGION" ]; then
   # default to toolchain region
   IBMCLOUD_CE_REGION=$(jq -r '.region_id' /toolchain/toolchain.json | awk -F: '{print $3}')
@@ -29,7 +29,7 @@ ibmcloud config --check-version false
 retry 5 2 \
   ibmcloud login -a "$(get_env ibmcloud-api "https://cloud.ibm.com")" -r "$IBMCLOUD_CE_REGION" --apikey "$IBMCLOUD_API_KEY"
 
-ibmcloud target -g "$(get_env resource-group)"
+ibmcloud target -g "$(get_env code-engine-resource-group)"
 
 # Make sure that the latest version of Code Engine CLI is installed
 if ! ibmcloud plugin show code-engine >/dev/null 2>&1; then
@@ -50,10 +50,10 @@ fi
 echo "Loading Kube config..."
 ibmcloud ce proj select -n "$(get_env code-engine-project)" -k
 
-RG_NAME=$(ibmcloud resource groups --output json | jq '.[] | select(.id=="$(get_env resource-group)") | .name')
-# check to see if "$(get_env resource-group)" is a name or an ID
+RG_NAME=$(ibmcloud resource groups --output json | jq '.[] | select(.id=="$(get_env code-engine-resource-group)") | .name')
+# check to see if "$(get_env code-engine-resource-group)" is a name or an ID
 if [ "${RG_NAME}" == "" ]; then
-  RG_NAME="$(get_env resource-group)"
+  RG_NAME="$(get_env code-engine-resource-group)"
 fi
 # check to see if $RG_NAME is not the default resource group
 if [ "$(ibmcloud resource groups --output json | jq '.[] | select(.name=="$RG_NAME") | .default')" == "false" ]; then
