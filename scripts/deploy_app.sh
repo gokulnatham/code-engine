@@ -1,34 +1,35 @@
 #!/usr/bin/env bash
 echo "Deploying your code as Code Engine application...."
-if ibmcloud ce app get -n $(get_env app-name) | grep Age; then
+if ibmcloud ce app get -n "$(get_env app-name)" | grep Age; then
     echo "Code Engine app with name $(get_env app-name) found, updating it"
-    ibmcloud ce app update -n $(get_env app-name) \
-        -i ${IMAGE} \
-        --rs ${IMAGE_PULL_SECRET_NAME} \
+    ibmcloud ce app update -n "$(get_env app-name)" \
+        -i "${IMAGE}" \
+        --rs "${IMAGE_PULL_SECRET_NAME}" \
         -w=false \
-        --cpu $(get_env cpu "0.25") \
-        --max $(get_env max-scale "1") \
-        --min $(get_env min-scale "0") \
-        -m $(get_env memory "0.5G") \
-        -p $(get_env port "http1:8080")
+        --cpu "$(get_env cpu "0.25")" \
+        --max "$(get_env max-scale "1")" \
+        --min "$(get_env min-scale "0")" \
+        -m "$(get_env memory "0.5G")" \
+        -p "$(get_env port "http1:8080")"
 else
     echo "Code Engine app with name $(get_env app-name) not found, creating it"
-    ibmcloud ce app create -n $(get_env app-name) \
-        -i ${IMAGE} \
-        --rs ${IMAGE_PULL_SECRET_NAME} \
+    ibmcloud ce app create -n "$(get_env app-name)" \
+        -i "${IMAGE}" \
+        --rs "${IMAGE_PULL_SECRET_NAME}" \
         -w=false \
-        --cpu $(get_env cpu "0.25") \
-        --max $(get_env max-scale "1") \
-        --min $(get_env min-scale "0") \
-        -m $(get_env memory "0.5G") \
-        -p $(get_env port "http1:8080")
+        --cpu "$(get_env cpu "0.25")" \
+        --max "$(get_env max-scale "1")" \
+        --min "$(get_env min-scale "0")" \
+        -m "$(get_env memory "0.5G")" \
+        -p "$(get_env port "http1:8080")"
 fi
 # Bind services, if any
+# shellcheck disable=SC2162,SC2046,SC2005
 while read; do
     NAME=$(echo "$REPLY" | jq -j '.key')
     PREFIX=$(echo "$REPLY" | jq -j '.value')
-    if ! ibmcloud ce app get -n $(get_env app-name) | grep "$NAME"; then
-        ibmcloud ce app bind -n $(get_env app-name) --si "$NAME" -p "$PREFIX" -w=false
+    if ! ibmcloud ce app get -n "$(get_env app-name)" | grep "$NAME"; then
+        ibmcloud ce app bind -n "$(get_env app-name)" --si "$NAME" -p "$PREFIX" -w=false
     fi
 done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
 echo "Checking if application is ready..."
@@ -38,9 +39,10 @@ echo "Timeout for the application deployment is ${DEPLOYMENT_TIMEOUT}"
 ITERATION=0
 while [[ "${ITERATION}" -le "${DEPLOYMENT_TIMEOUT}" ]]; do
     sleep 1
-    SVC_STATUS_READY=$(kubectl get ksvc/${KUBE_SERVICE_NAME} -o json | jq '.status?.conditions[]?.status?|select(. == "True")')
-    SVC_STATUS_NOT_READY=$(kubectl get ksvc/${KUBE_SERVICE_NAME} -o json | jq '.status?.conditions[]?.status?|select(. == "False")')
-    SVC_STATUS_UNKNOWN=$(kubectl get ksvc/${KUBE_SERVICE_NAME} -o json | jq '.status?.conditions[]?.status?|select(. == "Unknown")')
+    SVC_STATUS_READY=$(kubectl get "ksvc/${KUBE_SERVICE_NAME}" -o json | jq '.status?.conditions[]?.status?|select(. == "True")')
+    SVC_STATUS_NOT_READY=$(kubectl get "ksvc/${KUBE_SERVICE_NAME}" -o json | jq '.status?.conditions[]?.status?|select(. == "False")')
+    SVC_STATUS_UNKNOWN=$(kubectl get "ksvc/${KUBE_SERVICE_NAME}" -o json | jq '.status?.conditions[]?.status?|select(. == "Unknown")')
+    # shellcheck disable=SC2166
     if [ \( -n "$SVC_STATUS_NOT_READY" \) -o \( -n "$SVC_STATUS_UNKNOWN" \) ]; then
         echo "Application not ready, retrying"
     elif [ -n "$SVC_STATUS_READY" ]; then
@@ -52,13 +54,14 @@ while [[ "${ITERATION}" -le "${DEPLOYMENT_TIMEOUT}" ]]; do
     ITERATION="${ITERATION}"+1
 done
 echo "Application service details:"
-kubectl describe ksvc/${KUBE_SERVICE_NAME}
+kubectl describe "ksvc/${KUBE_SERVICE_NAME}"
+# shellcheck disable=SC2166
 if [ \( -n "$SVC_STATUS_NOT_READY" \) -o \( -n "$SVC_STATUS_UNKNOWN" \) ]; then
     echo "Application is not ready after waiting maximum time"
     exit 1
 fi
 # Determine app url for polling from knative service
-TEMP_URL=$(kubectl get ksvc/${KUBE_SERVICE_NAME} -o json | jq '.status.url')
+TEMP_URL=$(kubectl get "ksvc/${KUBE_SERVICE_NAME}" -o json | jq '.status.url')
 echo "Application status URL: $TEMP_URL"
 TEMP_URL=${TEMP_URL%\"} # remove end quote
 TEMP_URL=${TEMP_URL#\"} # remove beginning quote

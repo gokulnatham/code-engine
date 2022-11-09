@@ -9,7 +9,7 @@ docker push "${IMAGE}"
 DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}" | awk -F@ '{print $2}')"
 
 #
-# Save the artifact to the pipeline, 
+# Save the artifact to the pipeline,
 # so it can be scanned and signed later
 #
 save_artifact app-image \
@@ -42,6 +42,7 @@ if [[ "${TAG}" ]]; then
     for i in "${!tags[@]}"
     do
         TEMP_TAG=${tags[i]}
+        # shellcheck disable=SC2001
         TEMP_TAG=$(echo "$TEMP_TAG" | sed -e 's/^[[:space:]]*//')
         echo "adding tag $i $TEMP_TAG"
         ADDITIONAL_IMAGE_TAG="$ICR_REGISTRY_REGION.icr.io"/"$ICR_REGISTRY_NAMESPACE"/"$IMAGE_NAME":"$TEMP_TAG"
@@ -49,7 +50,7 @@ if [[ "${TAG}" ]]; then
         docker push "$ADDITIONAL_IMAGE_TAG"
 
         # save tags to pipelinectl
-        tags="$(load_artifact app-image tags)"
-        save_artifact app-image "tags=${tags},${TEMP_TAG}"
+        image_tags="$(load_artifact app-image tags)"
+        save_artifact app-image "tags=${image_tags},${TEMP_TAG}"
     done
 fi

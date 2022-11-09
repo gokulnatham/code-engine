@@ -16,8 +16,6 @@ APP_REPO_NAME=${APP_REPO_NAME%.git}
 
 COMMIT_SHA="$(load_repo app-repo commit)"
 
-APP_ABSOLUTE_SCM_TYPE=$(get_absolute_scm_type "$APP_REPO")
-
 INVENTORY_TOKEN_PATH="./inventory-token"
 read -r INVENTORY_REPO_NAME INVENTORY_REPO_OWNER INVENTORY_SCM_TYPE INVENTORY_API_URL < <(get_repo_params "$(get_env INVENTORY_URL)" "$INVENTORY_TOKEN_PATH")
 #

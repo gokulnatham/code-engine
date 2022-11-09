@@ -41,7 +41,7 @@ get-icr-region() {
       ;;
     stg)
       echo stg
-      ;;  
+      ;;
     *)
       echo "Unknown region: $1" >&2
       exit 1
