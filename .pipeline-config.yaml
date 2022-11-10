@@ -19,7 +19,7 @@ test:
   script: |
     #!/usr/bin/env bash
 
-    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+    cd "../$(load_repo app-repo path)/$(get_env source "")"
     #npm ci
 
     # save exit code for old evidence collection
@@ -52,7 +52,7 @@ containerize:
       set -x
     fi
 
-    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+    cd "../$(load_repo app-repo path)/$(get_env source "")"
 
     source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_setup.sh"
     if [ "$(get_env code-engine-build-strategy "dockerfile")" == "dockerfile" ]; then
@@ -72,7 +72,7 @@ deploy:
       set -x
     fi
 
-    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+    cd "../$(load_repo app-repo path)/$(get_env source "")"
 
     source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
 
@@ -88,7 +88,7 @@ acceptance-test:
   script: |
     #!/usr/bin/env bash
 
-    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+    cd "../$(load_repo app-repo path)/$(get_env source "")"
 
     #npm ci
     export APP_URL=$(get_env app-url)
@@ -122,6 +122,6 @@ release:
       set -x
     fi
 
-    cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
+    cd "../$(load_repo app-repo path)/$(get_env source "")"
 
     source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/release.sh"

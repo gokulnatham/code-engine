@@ -23,7 +23,7 @@ else
 fi
 
 echo "using Buildpacks to build application"
-ibmcloud ce buildrun submit --name "${PIPELINE_RUN_ID}" --strategy buildpacks --image "$IMAGE" --registry-secret "${PIPELINE_ID}" --source "$WORKSPACE/$(load_repo app-repo path)/$(get_env context-dir "")" --context-dir "." --wait
+ibmcloud ce buildrun submit --name "${PIPELINE_RUN_ID}" --strategy buildpacks --image "$IMAGE" --registry-secret "${PIPELINE_ID}" --source "$WORKSPACE/$(load_repo app-repo path)/$(get_env source "")" --context-dir "." --wait
 
 # TODO Should use the icr cli command to retrieve the DIGEST it would prevent to pull back the built image
 # in the docker dind local registry
