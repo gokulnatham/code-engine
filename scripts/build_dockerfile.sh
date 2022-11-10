@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-docker build "-t ${IMAGE}" .
+docker build -t "${IMAGE}" .
 docker push "${IMAGE}"
 
 DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}" | awk -F@ '{print $2}')"

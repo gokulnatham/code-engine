@@ -63,6 +63,8 @@ fi
 IMAGE_NAME=$(basename "$REPOSITORY" .git)
 IMAGE_TAG="$(date +%Y%m%d%H%M%S)-$(cat /config/git-branch)-$(cat /config/git-commit)"
 
+export IMAGE
+
 if [[ -f "/config/break_glass" ]]; then
   ARTIFACTORY_URL="$(jq -r .parameters.repository_url /config/artifactory)"
   ARTIFACTORY_REGISTRY="$(sed -E 's~https://(.*)/?~\1~' <<<"$ARTIFACTORY_URL")"
@@ -90,5 +92,3 @@ else
       echo "Registry namespace ${ICR_REGISTRY_NAMESPACE} found."
   fi
 fi
-
-export IMAGE
