@@ -23,7 +23,7 @@ else
 fi
 
 echo "using Buildpacks to build application"
-IBMCLOUD_TRACE=true ibmcloud ce buildrun submit --name "${PIPELINE_RUN_ID}" --strategy buildpacks --image "$IMAGE" --registry-secret "${PIPELINE_ID}" --source "$WORKSPACE/$(load_repo app-repo path)/$(get_env context-dir "")" --context-dir "." --wait
+ibmcloud ce buildrun submit --name "${PIPELINE_RUN_ID}" --strategy buildpacks --image "$IMAGE" --registry-secret "${PIPELINE_ID}" --source "$WORKSPACE/$(load_repo app-repo path)/$(get_env context-dir "")" --context-dir "." --wait
 
 # Pull the image to retrieve the digest
 docker pull "${IMAGE}"

@@ -1,39 +1,14 @@
 #!/usr/bin/env bash
+
+# shellcheck source=./code-engine-utilities.sh
+source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/code-engine-utilities.sh"
+
 echo "Deploying your code as Code Engine application...."
-if ibmcloud ce app get -n "$(get_env app-name)" > /dev/null 2>&1; then
-    echo "Code Engine app with name $(get_env app-name) found, updating it"
-    ibmcloud ce app update -n "$(get_env app-name)" \
-        -i "${IMAGE}" \
-        --rs "${IMAGE_PULL_SECRET_NAME}" \
-        -w=false \
-        --cpu "$(get_env cpu "0.25")" \
-        --max "$(get_env max-scale "1")" \
-        --min "$(get_env min-scale "0")" \
-        -m "$(get_env memory "0.5G")" \
-        -p "$(get_env port "http1:8080")"
-        # TODO take in account --cmd --arg
-else
-    echo "Code Engine app with name $(get_env app-name) not found, creating it"
-    ibmcloud ce app create -n "$(get_env app-name)" \
-        -i "${IMAGE}" \
-        --rs "${IMAGE_PULL_SECRET_NAME}" \
-        -w=false \
-        --cpu "$(get_env cpu "0.25")" \
-        --max "$(get_env max-scale "1")" \
-        --min "$(get_env min-scale "0")" \
-        -m "$(get_env memory "0.5G")" \
-        -p "$(get_env port "http1:8080")"
-        # TODO take in account --cmd --arg
-fi
+deploy-code-engine-application "$(get_env app-name)" "$(load_artifact app-image name)" "${IMAGE_PULL_SECRET_NAME}"
+
 # Bind services, if any
-# shellcheck disable=SC2162,SC2046,SC2005
-while read; do
-    NAME=$(echo "$REPLY" | jq -j '.key')
-    PREFIX=$(echo "$REPLY" | jq -j '.value')
-    if ! ibmcloud ce app get -n "$(get_env app-name)" | grep "$NAME"; then
-        ibmcloud ce app bind -n "$(get_env app-name)" --si "$NAME" -p "$PREFIX" -w=false
-    fi
-done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
+bind-services-to-code-engine-application "$(get_env app-name)"
+
 echo "Checking if application is ready..."
 KUBE_SERVICE_NAME=$(get_env app-name)
 DEPLOYMENT_TIMEOUT=$(get_env deployment-timeout "300")

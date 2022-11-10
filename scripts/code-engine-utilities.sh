@@ -89,3 +89,92 @@ initialize-code-engine-project-context() {
   fi
 
 }
+
+deploy-code-engine-application() {
+  refresh_ibmcloud_session || return
+
+  local application=$1
+  local image=$2
+  local image_pull_secret=$3
+
+  if ibmcloud ce app get -n "${application}" > /dev/null 2>&1; then
+    echo "Code Engine app with name ${application} found, updating it"
+    ibmcloud ce app update -n "${application}" \
+      -i "${image}" \
+      --rs "${image_pull_secret}" \
+      -w=false \
+      --cpu "$(get_env cpu "0.25")" \
+      --max "$(get_env max-scale "1")" \
+      --min "$(get_env min-scale "0")" \
+      -m "$(get_env memory "0.5G")" \
+      -p "$(get_env port "http1:8080")"
+      # TODO take in account --cmd --arg
+  else
+    echo "Code Engine app with name ${application} not found, creating it"
+    ibmcloud ce app create -n "${application}" \
+      -i "${image}" \
+      --rs "${image_pull_secret}" \
+      -w=false \
+      --cpu "$(get_env cpu "0.25")" \
+      --max "$(get_env max-scale "1")" \
+      --min "$(get_env min-scale "0")" \
+      -m "$(get_env memory "0.5G")" \
+      -p "$(get_env port "http1:8080")"
+      # TODO take in account --cmd --arg
+  fi
+}
+
+deploy-code-engine-job() {
+  refresh_ibmcloud_session || return
+
+  local job=$1
+  local image=$2
+  local image_pull_secret=$3
+
+  if ibmcloud ce job get -n "${job}" > /dev/null 2>&1; then
+    echo "Code Engine job with name ${job} found, updating it"
+    ibmcloud ce job update -n "${job}" \
+      -i "${image}" \
+      --rs "${image_pull_secret}" \
+      -w=false \
+      --cpu "$(get_env cpu "0.25")" \
+      -m "$(get_env memory "0.5G")" \
+      --maxexecutiontime "$(get_env maxexecutiontime "7200")"
+      # TODO take in account --cmd --arg
+  else
+    echo "Code Engine job with name ${job} not found, creating it"
+    ibmcloud ce job create -n "${job}" \
+      -i "${image}" \
+      --rs "${image_pull_secret}" \
+      -w=false \
+      --cpu "$(get_env cpu "0.25")" \
+      -m "$(get_env memory "0.5G")" \
+      --maxexecutiontime "$(get_env maxexecutiontime "7200")"
+      # TODO take in account --cmd --arg
+  fi
+}
+
+bind-services-to-code-engine-application() {
+  local application=$1
+  bind-services-to-code-engine_ "app" "$application"
+}
+
+bind-services-to-code-engine-job() {
+  local job=$1
+  bind-services-to-code-engine_ "job" "$job"
+}
+
+bind-services-to-code-engine_() {
+  refresh_ibmcloud_session || return
+
+  local kind=$1
+  local ce_element=$2
+  # shellcheck disable=SC2162,SC2046,SC2005
+  while read; do
+    NAME=$(echo "$REPLY" | jq -j '.key')
+    PREFIX=$(echo "$REPLY" | jq -j '.value')
+    if ! ibmcloud ce "$kind" get -n "$ce_element" | grep "$NAME"; then
+        ibmcloud ce "$kind" bind -n "$ce_element" --si "$NAME" -p "$PREFIX" -w=false
+    fi
+  done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
+}

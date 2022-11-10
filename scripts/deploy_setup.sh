@@ -16,10 +16,6 @@ else
 fi
 IBMCLOUD_TOOLCHAIN_ID="$(jq -r .toolchain_guid /toolchain/toolchain.json)"
 REGISTRY_URL="$(load_artifact app-image name | awk -F/ '{print $1}')"
-export IMAGE
-IMAGE="$(load_artifact app-image name)"
-export DIGEST
-DIGEST="$(load_artifact app-image digest)"
 export IMAGE_PULL_SECRET_NAME
 IMAGE_PULL_SECRET_NAME="ibmcloud-toolchain-${IBMCLOUD_TOOLCHAIN_ID}-${REGISTRY_URL}"
 
