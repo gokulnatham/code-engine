@@ -1,28 +1,24 @@
 #!/usr/bin/env bash
-echo "Deploying your code as Code Engine application...."
-if ibmcloud ce app get -n "$(get_env app-name)" > /dev/null 2>&1; then
-    echo "Code Engine app with name $(get_env app-name) found, updating it"
-    ibmcloud ce app update -n "$(get_env app-name)" \
+echo "Deploying your code as Code Engine job...."
+if ibmcloud ce job get -n "$(get_env app-name)" > /dev/null 2>&1; then
+    echo "Code Engine job with name $(get_env app-name) found, updating it"
+    ibmcloud ce job update -n "$(get_env app-name)" \
         -i "${IMAGE}" \
         --rs "${IMAGE_PULL_SECRET_NAME}" \
         -w=false \
         --cpu "$(get_env cpu "0.25")" \
-        --max "$(get_env max-scale "1")" \
-        --min "$(get_env min-scale "0")" \
         -m "$(get_env memory "0.5G")" \
-        -p "$(get_env port "http1:8080")"
+        --maxexecutiontime "$(get_env maxexecutiontime "7200")"
         # TODO take in account --cmd --arg
 else
-    echo "Code Engine app with name $(get_env app-name) not found, creating it"
-    ibmcloud ce app create -n "$(get_env app-name)" \
+    echo "Code Engine job with name $(get_env app-name) not found, creating it"
+    ibmcloud ce job create -n "$(get_env app-name)" \
         -i "${IMAGE}" \
         --rs "${IMAGE_PULL_SECRET_NAME}" \
         -w=false \
         --cpu "$(get_env cpu "0.25")" \
-        --max "$(get_env max-scale "1")" \
-        --min "$(get_env min-scale "0")" \
         -m "$(get_env memory "0.5G")" \
-        -p "$(get_env port "http1:8080")"
+        --maxexecutiontime "$(get_env maxexecutiontime "7200")"
         # TODO take in account --cmd --arg
 fi
 # Bind services, if any
@@ -30,11 +26,11 @@ fi
 while read; do
     NAME=$(echo "$REPLY" | jq -j '.key')
     PREFIX=$(echo "$REPLY" | jq -j '.value')
-    if ! ibmcloud ce app get -n "$(get_env app-name)" | grep "$NAME"; then
-        ibmcloud ce app bind -n "$(get_env app-name)" --si "$NAME" -p "$PREFIX" -w=false
+    if ! ibmcloud ce job get -n "$(get_env app-name)" | grep "$NAME"; then
+        ibmcloud ce job bind -n "$(get_env app-name)" --si "$NAME" -p "$PREFIX" -w=false
     fi
 done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
-echo "Checking if application is ready..."
+echo "Checking if job is ready..."
 KUBE_SERVICE_NAME=$(get_env app-name)
 DEPLOYMENT_TIMEOUT=$(get_env deployment-timeout "300")
 echo "Timeout for the application deployment is ${DEPLOYMENT_TIMEOUT}"

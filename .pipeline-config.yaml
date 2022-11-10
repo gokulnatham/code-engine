@@ -55,7 +55,11 @@ containerize:
     cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
 
     source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_setup.sh"
-    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build.sh"
+    if [ "$(get_env code-engine-build-strategy "dockerfile")" == "dockerfile" ]; then
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_dockerfile.sh"
+    else
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_buildpacks.sh"
+    fi
 
 deploy:
   image: icr.io/continuous-delivery/pipeline/pipeline-base-image:2.19@sha256:482d28e51d5acc65471b366bbdcabc97f69e49da933337a7c42f45907cd63173
@@ -71,7 +75,12 @@ deploy:
     cd "../$(load_repo app-repo path)/$(get_env context-dir "")"
 
     source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
-    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
+
+    if [ "$(get_env deployment-type "application")" == "job" ]; then
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
+    else
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
+    fi
 
 acceptance-test:
   abort_on_failure: false
