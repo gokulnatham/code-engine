@@ -44,17 +44,17 @@ while read -r artifact; do
     tags="$(load_artifact "${artifact}" tags)"
 
     APP_NAME="$(get_env app-name)"
-    APP_ARTIFACTS=$(jq --null-input -c --arg app "${APP_NAME}" --arg tags "${tags}" \
+    APP_ARTIFACTS=$(jq --null-input -c --arg name "${APP_NAME}" --arg tags "${tags}" \
       --arg ce_type "$(get_env code-engine-entity-type "application")" \
       '.app=$app | .tags=$tags | .code_engine_entity_type=$ce_type')
 
     # Only keep image name (without namespace part and no tag or sha) for inventory name
     # Image name is remaining part after the repository and namespace and can contains /
-    image_name=$(echo "$image" |  awk -F/ '{a=match($0, $3); print substr($0,a)}' | awk -F@  '{print $1}' | awk -F: '{print $1}')
+    #image_name=$(echo "$image" |  awk -F/ '{a=match($0, $3); print substr($0,a)}' | awk -F@  '{print $1}' | awk -F: '{print $1}')
 
     cocoa inventory add \
         --artifact="${image}@${digest}" \
-        --name="$image_name" \
+        --name="$APP_NAME" \
         --app-artifacts="${APP_ARTIFACTS}" \
         --signature="${signature}" \
         --provenance="${image}@${digest}" \

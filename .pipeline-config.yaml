@@ -72,18 +72,39 @@ deploy:
       set -x
     fi
 
-    # use different setup depending on CI or CD
-    if [[ "$(get_env pipeline_namespace)" == *"cd"* ]]; then
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
-    else
-      cd "../$(load_repo app-repo path)/$(get_env source "")"
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
-    fi
+    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
 
-    if [ "$(get_env code-engine-entity-type "application")" == "job" ]; then
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
+    # use different deployment process depending on CI or CD
+    if [[ "$(get_env pipeline_namespace)" == *"cd"* ]]; then
+      INVENTORY_PATH="$(get_env inventory-path)"
+      DEPLOYMENT_DELTA_PATH="$(get_env deployment-delta-path)"
+      echo "Target environment: $(get_env environment)"
+      echo "Deployment Delta (inventory entries with updated artifacts)"
+      jq '.' "$DEPLOYMENT_DELTA_PATH"
+      echo ""
+      #
+      # iterate over inventory deployment delta
+      #
+      for INVENTORY_ENTRY in $(jq -r '.[]' $DEPLOYMENT_DELTA_PATH); do
+        echo "==============================================="
+        echo "Deploying $INVENTORY_ENTRY"
+        set_env app-name "$(echo $INVENTORY_ENTRY | jq -r '.app_artifacts.name')"
+        code_engine_entity_type=$(echo $INVENTORY_ENTRY | jq -r '.app_artifacts.code_engine_entity_type')
+        if [ "$code_engine_entity_type" == "job" ]; then
+          source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
+        else
+          source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
+        fi
+        echo ""
+        echo "==============================================="
+      done
     else
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
+      IMAGE=$(load_artifact app-image name)
+      if [ "$(get_env code-engine-entity-type "application")" == "job" ]; then
+        source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
+      else
+        source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
+      fi
     fi
 
 acceptance-test:

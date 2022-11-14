@@ -4,7 +4,7 @@
 source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/code-engine-utilities.sh"
 
 echo "Deploying your code as Code Engine job...."
-deploy-code-engine-job "$(get_env app-name)" "$(load_artifact app-image name)" "${IMAGE_PULL_SECRET_NAME}"
+deploy-code-engine-job "$(get_env app-name)" "${IMAGE}" "${IMAGE_PULL_SECRET_NAME}"
 
 # Bind services, if any
 bind-services-to-code-engine-job "$(get_env app-name)"
