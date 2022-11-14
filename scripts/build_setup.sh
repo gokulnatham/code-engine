@@ -60,7 +60,12 @@ if [[ -s "/config/repository" ]]; then
 else
   REPOSITORY="$(load_repo app-repo url)"
 fi
-IMAGE_NAME=$(basename "$REPOSITORY" .git)
+if [ -z "$(get_env image-name)" ]; then
+  # default to repo name and source
+  IMAGE_NAME="$(basename "$REPOSITORY" .git)-$(get_env source)"
+else
+  IMAGE_NAME="$(get_env image-name)"
+fi
 IMAGE_TAG="$(date +%Y%m%d%H%M%S)-$(cat /config/git-branch)-$(cat /config/git-commit)"
 
 export IMAGE

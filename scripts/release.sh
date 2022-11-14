@@ -46,9 +46,13 @@ while read -r artifact; do
     APP_NAME="$(get_env app-name)"
     APP_ARTIFACTS='{ "app": "'${APP_NAME}'", "tags": "'${tags}'" }'
 
+    # Only keep image name (without namespace part) for inventory name
+    # Image name is remaining part after the repository and namespace and can contains /
+    image_name=$(echo "$image" |  awk -F/ '{a=match($0, $3); print substr($0,a)}')
+
     cocoa inventory add \
         --artifact="${image}@${digest}" \
-        --name="${APP_REPO_NAME}" \
+        --name="$image_name" \
         --app-artifacts="${APP_ARTIFACTS}" \
         --signature="${signature}" \
         --provenance="${image}@${digest}" \
