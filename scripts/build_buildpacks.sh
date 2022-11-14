@@ -28,7 +28,7 @@ ibmcloud ce buildrun submit --name "${PIPELINE_RUN_ID}" --strategy buildpacks --
 # Use the icr cli command to retrieve the DIGEST it would prevent to pull back the built image
 digest=$(mktemp)
 cr_region=$(cat /config/registry-region)
-ibmcloud login --apikey "$ICR_API_KEY"
+ibmcloud login --apikey @/config/api-key
 ibmcloud cr region-set "${cr_region##ibm:yp:}"
 ibmcloud cr image-digests --restrict "$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME" --json > "$digest"
 # parse the json to find the id
