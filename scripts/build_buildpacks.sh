@@ -25,11 +25,18 @@ fi
 echo "using Buildpacks to build application"
 ibmcloud ce buildrun submit --name "${PIPELINE_RUN_ID}" --strategy buildpacks --image "$IMAGE" --registry-secret "${PIPELINE_ID}" --source "$WORKSPACE/$(load_repo app-repo path)/$(get_env source "")" --context-dir "." --wait
 
-# TODO Should use the icr cli command to retrieve the DIGEST it would prevent to pull back the built image
-# in the docker dind local registry
-# Pull the image to retrieve the digest
-docker pull "${IMAGE}"
-DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}" | awk -F@ '{print $2}')"
+# Use the icr cli command to retrieve the DIGEST it would prevent to pull back the built image
+digest=$(mktemp)
+cr_region=$(cat /config/registry-region)
+ibmcloud login --apikey "$ICR_API_KEY"
+ibmcloud cr region-set "${cr_region##ibm:yp:}"
+ibmcloud cr image-digests --restrict "$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME" --json > "$digest"
+# parse the json to find the id
+DIGEST=$(jq -r \
+  --arg repo "$ICR_REGISTRY_REGION.icr.io/$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME" \
+  --arg tag "$IMAGE_TAG" '.[] | select(.repoTags[$repo][$tag].issueCount >= 0) | .id' "$digest")
+
+echo "Found digest $DIGEST for $ICR_REGISTRY_REGION.icr.io/$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME:$IMAGE_TAG"
 
 #
 # Save the artifact to the pipeline,

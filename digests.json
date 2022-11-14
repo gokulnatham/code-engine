@@ -1,0 +1,84 @@
+[
+	{
+		"id": "sha256:27489802bf417fb1817f44ef5e2db248a28ac43f14ac917e8230f144f50df860",
+		"repoTags": {
+			"de.icr.io/jumpstart-code-engine/code-engine-sample": {
+				"20221110134803-main-78aa14b477a501716a0b2b476270d920a3ed9b76": {
+					"vulnerable": "false",
+					"vulnerabilityCount": 0,
+					"configurationIssueCount": 0,
+					"issueCount": 0,
+					"exemptIssueCount": 0
+				}
+			}
+		},
+		"created": 1668088121,
+		"size": 4817904,
+		"manifestType": "application/vnd.docker.distribution.manifest.v2+json"
+	},
+	{
+		"id": "sha256:adf38b866e0f482b1ff0ef50af6760bc4adad937c618b8ca2e5c1e28787c66be",
+		"repoTags": {
+			"de.icr.io/jumpstart-code-engine/code-engine-sample": {
+				"20221110150107-main-835510a26615e8959daec772004a851bf492caaa": {
+					"vulnerable": "false",
+					"vulnerabilityCount": 0,
+					"configurationIssueCount": 0,
+					"issueCount": 0,
+					"exemptIssueCount": 0
+				}
+			}
+		},
+		"created": 1668092507,
+		"size": 4817904,
+		"manifestType": "application/vnd.docker.distribution.manifest.v2+json"
+	},
+	{
+		"id": "sha256:b391ca9ed80bea46592729308d4dc2773c6cb2d0d9910694a894af8595a701f5",
+		"repoTags": {
+			"de.icr.io/jumpstart-code-engine/code-engine-sample": {
+				"20221110125659-main-78aa14b477a501716a0b2b476270d920a3ed9b76": {
+					"vulnerable": "false",
+					"vulnerabilityCount": 0,
+					"configurationIssueCount": 0,
+					"issueCount": 0,
+					"exemptIssueCount": 0
+				},
+				"20221110144104-main-d0c70e999401d46428101039c2af9e53ffecde34": {
+					"vulnerable": "false",
+					"vulnerabilityCount": 0,
+					"configurationIssueCount": 0,
+					"issueCount": 0,
+					"exemptIssueCount": 0
+				},
+				"20221110152521-main-68bd9b1d4fbd0fd68b5bc266cc51508010cdf125": {
+					"vulnerable": "false",
+					"vulnerabilityCount": 0,
+					"configurationIssueCount": 0,
+					"issueCount": 0,
+					"exemptIssueCount": 0
+				}
+			}
+		},
+		"created": 315532801,
+		"size": 315007482,
+		"manifestType": "application/vnd.docker.distribution.manifest.v2+json"
+	},
+	{
+		"id": "sha256:b66dfffcf4fa1657098b59e70a84c1896390c8c59a18268a6534a7dd798f6fbc",
+		"repoTags": {
+			"de.icr.io/jumpstart-code-engine/code-engine-sample": {
+				"20221110152304-main-68bd9b1d4fbd0fd68b5bc266cc51508010cdf125": {
+					"vulnerable": "false",
+					"vulnerabilityCount": 0,
+					"configurationIssueCount": 0,
+					"issueCount": 0,
+					"exemptIssueCount": 0
+				}
+			}
+		},
+		"created": 1668093865,
+		"size": 4817904,
+		"manifestType": "application/vnd.docker.distribution.manifest.v2+json"
+	}
+]

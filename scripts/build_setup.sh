@@ -60,7 +60,7 @@ if [[ -s "/config/repository" ]]; then
 else
   REPOSITORY="$(load_repo app-repo url)"
 fi
-if [ -z "$(get_env image-name)" ]; then
+if [ -z "$(get_env image-name "")" ]; then
   # default to repo name and source
   IMAGE_NAME="$(basename "$REPOSITORY" .git)-$(get_env source)"
 else
