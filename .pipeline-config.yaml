@@ -72,11 +72,15 @@ deploy:
       set -x
     fi
 
-    cd "../$(load_repo app-repo path)/$(get_env source "")"
+    # use different setup depending on CI or CD
+    if [[ "$(get_env pipeline_namespace)" == *"cd"* ]]; then
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
+    else
+      cd "../$(load_repo app-repo path)/$(get_env source "")"
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
+    fi
 
-    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
-
-    if [ "$(get_env deployment-type "application")" == "job" ]; then
+    if [ "$(get_env code-engine-entity-type "application")" == "job" ]; then
       source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
     else
       source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"

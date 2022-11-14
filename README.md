@@ -12,4 +12,5 @@ code-engine-project: devsecops-code-engine-sample
 code-engine-region: ibm:yp:eu-de
 code-engine-resource-group: jumpstart
 code-engine-build-strategy: dockerfile | buildpacks
+code-engine-entity-type: application | job
 source: <path to the location of code to build in the repository>
