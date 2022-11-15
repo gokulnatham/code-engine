@@ -216,7 +216,9 @@ setup-ce-env-entity_() {
     echo "No properties found to create code engine $kind for $scope"
   else
     props=$(mktemp)
+    ls -1 ${properties_files_path}/${prefix}CE_ENV_*
     for prop in $(ls -1 ${properties_files_path}/${prefix}CE_ENV_*); do
+      echo "prop=$prop"
       echo "${prop##${prefix}CE_ENV_}=$(cat ${properties_files_path}/$prop)" >> $props
     done
     cat $props
