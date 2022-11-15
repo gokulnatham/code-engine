@@ -248,7 +248,6 @@ setup-ce-env-entity_() {
   fi
 
   if [ -s "$props" ]; then
-    cat "$props"
     # shellcheck disable=SC2086
     if ibmcloud ce $kind get --name "$scope-$kind" > /dev/null 2>&1; then
       echo "$kind $scope-$kind already exists. Updating it"

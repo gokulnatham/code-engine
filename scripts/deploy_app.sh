@@ -50,7 +50,6 @@ if [ -z "$APPLICATION_URL" ]; then
     exit 1
 fi
 echo "Application is available"
-echo "=========================================================="
 echo -e "View the application at: $APPLICATION_URL"
 # Record task results
 set_env app-url "$APPLICATION_URL"
