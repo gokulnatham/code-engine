@@ -88,8 +88,8 @@ deploy:
       for INVENTORY_ENTRY in $(jq -r '.[]' $DEPLOYMENT_DELTA_PATH); do
         echo "==============================================="
         echo "Deploying $INVENTORY_ENTRY"
-        set_env app-name "$(echo $INVENTORY_ENTRY | jq -r '.app_artifacts.name')"
-        code_engine_entity_type=$(echo $INVENTORY_ENTRY | jq -r '.app_artifacts.code_engine_entity_type')
+        set_env app-name "$(jq -r '.app_artifacts.name' ${INVENTORY_PATH}/${INVENTORY_ENTRY})"
+        code_engine_entity_type=$(jq -r '.app_artifacts.code_engine_entity_type' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
         if [ "$code_engine_entity_type" == "job" ]; then
           source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
         else
