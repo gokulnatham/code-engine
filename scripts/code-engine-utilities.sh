@@ -179,7 +179,7 @@ bind-services-to-code-engine_() {
   done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
 }
 
-setup-env-configmap() {
+setup-ce-env-configmap() {
   local scope=$1
   # filter the pipeline/trigger non-secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the configmap for this given scope
@@ -187,7 +187,7 @@ setup-env-configmap() {
   setup-env_entity_ "$scope" "configmap"
 }
 
-setup-env-secret() {
+setup-ce-env-secret() {
   local scope=$1
   # filter the pipeline/trigger secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the secret for this given scope
@@ -195,7 +195,7 @@ setup-env-secret() {
   setup-env_entity_ "$scope" "secret"
 }
 
-setup-env_entity_() {
+setup-ce-env_entity_() {
   local scope=$1
   local kind=$2
   local prefix
