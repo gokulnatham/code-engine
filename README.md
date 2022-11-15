@@ -16,7 +16,7 @@ The samples are located in different location to illustrate build strategy using
 | `code-engine-entity-type` | `application` | type of code engine entity to create/update as part of deployment. It can be either `application` or `job` | |
 | `code-engine-build-strategy` | `dockerfile` | The build strategy for the code engine entity. It can be `dockerfile` or `buildpacks` |
 | `source` | | path to the location of code to build in the repository | |
-| `CE_ENV_\<XXXX\>` |  | pipeline/trigger property (secured or not) to provide value for coden engine environment variable \<XXXX\> | |
+| `CE_ENV_\<XXXX\>` |  | pipeline/trigger property (secured or not) to provide value for code engine environment variable \<XXXX\> | |
 
 <u>Note</u>: As part of CD deployment process, to scope configuration/environment variables for a given inventory entry, you can prefix the property with the inventory entry name like `<inventory_entry>_`.
 
