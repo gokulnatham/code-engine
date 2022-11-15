@@ -211,11 +211,12 @@ setup-ce-env-entity_() {
     properties_files_path="/config/environment-properties"
   fi
 
-  if [ "$(ls -1 "${properties_files_path}/${prefix}CE_ENV_*" | wc -l)" == "0" ]; then
+  ls -1 ${properties_files_path}
+  if [ "$(ls -1 ${properties_files_path}/${prefix}CE_ENV_* | wc -l)" == "0" ]; then
     echo "No properties found to create code engine $kind for $scope"
   else
     props=$(mktemp)
-    for prop in $(ls -1 "${properties_files_path}/${prefix}CE_ENV_*"); do
+    for prop in $(ls -1 ${properties_files_path}/${prefix}CE_ENV_*); do
       echo "${prop##${prefix}CE_ENV_}=$(cat ${properties_files_path}/$prop)" >> $props
     done
     cat $props
