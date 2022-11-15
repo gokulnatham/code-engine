@@ -97,11 +97,19 @@ deploy-code-engine-application() {
   local image=$2
   local image_pull_secret=$3
 
+  if [ -n "$(get_env ce-env-configmap "")" ]; then
+    env_cm_param="--env-from-configmap $(get_env ce-env-configmap)"
+  fi
+  if [ -n "$(get_env ce-env-secret "")" ]; then
+    env_secret_param="--env-from-secret $(get_env ce-env-secret)"
+  fi
+
   if ibmcloud ce app get -n "${application}" > /dev/null 2>&1; then
     echo "Code Engine app with name ${application} found, updating it"
+    # shellcheck disable=SC2086
     ibmcloud ce app update -n "${application}" \
       -i "${image}" \
-      --rs "${image_pull_secret}" \
+      --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
       -w=false \
       --cpu "$(get_env cpu "0.25")" \
       --max "$(get_env max-scale "1")" \
@@ -111,9 +119,10 @@ deploy-code-engine-application() {
       # TODO take in account --cmd --arg
   else
     echo "Code Engine app with name ${application} not found, creating it"
+    # shellcheck disable=SC2086
     ibmcloud ce app create -n "${application}" \
       -i "${image}" \
-      --rs "${image_pull_secret}" \
+      --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
       -w=false \
       --cpu "$(get_env cpu "0.25")" \
       --max "$(get_env max-scale "1")" \
@@ -131,11 +140,19 @@ deploy-code-engine-job() {
   local image=$2
   local image_pull_secret=$3
 
+  if [ -n "$(get_env ce-env-configmap "")" ]; then
+    env_cm_param="--env-from-configmap $(get_env ce-env-configmap)"
+  fi
+  if [ -n "$(get_env ce-env-secret "")" ]; then
+    env_secret_param="--env-from-secret $(get_env ce-env-secret)"
+  fi
+
   if ibmcloud ce job get -n "${job}" > /dev/null 2>&1; then
     echo "Code Engine job with name ${job} found, updating it"
+    # shellcheck disable=SC2086
     ibmcloud ce job update -n "${job}" \
       -i "${image}" \
-      --rs "${image_pull_secret}" \
+      --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
       -w=false \
       --cpu "$(get_env cpu "0.25")" \
       -m "$(get_env memory "0.5G")" \
@@ -143,6 +160,7 @@ deploy-code-engine-job() {
       # TODO take in account --cmd --arg
   else
     echo "Code Engine job with name ${job} not found, creating it"
+    # shellcheck disable=SC2086
     ibmcloud ce job create -n "${job}" \
       -i "${image}" \
       --rs "${image_pull_secret}" \
@@ -211,15 +229,15 @@ setup-ce-env-entity_() {
     properties_files_path="/config/environment-properties"
   fi
 
-  ls -1 ${properties_files_path}
+  # shellcheck disable=SC2086,SC2012
   if [ "$(ls -1 ${properties_files_path}/${prefix}CE_ENV_* | wc -l)" == "0" ]; then
     echo "No properties found to create code engine $kind for $scope"
   else
     props=$(mktemp)
-    ls -1 ${properties_files_path}/${prefix}CE_ENV_*
-    for prop in $(ls -1 ${properties_files_path}/${prefix}CE_ENV_*); do
-      echo "prop=$prop"
-      echo "${prop##${prefix}CE_ENV_}=$(cat ${properties_files_path}/$prop)" >> $props
+    # shellcheck disable=SC2086,SC2012
+    for prop in "${properties_files_path}/${prefix}CE_ENV_"*; do
+      # shellcheck disable=SC2295
+      echo "${prop##${properties_files_path}/${prefix}CE_ENV_}=$(cat $prop)" >> $props
     done
     cat $props
 

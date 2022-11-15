@@ -6,7 +6,7 @@ source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/code-
 echo "Deploying your code as Code Engine application...."
 setup-ce-env-configmap "$(get_env app-name)"
 setup-ce-env-secret "$(get_env app-name)"
-deploy-code-engine-application "$(get_env app-name)" "${IMAGE}" "${IMAGE_PULL_SECRET_NAME}" "$(get_env ce-env-configmap "")" "$(get_env ce-env-secret "")"
+deploy-code-engine-application "$(get_env app-name)" "${IMAGE}" "${IMAGE_PULL_SECRET_NAME}"
 
 # Bind services, if any
 bind-services-to-code-engine-application "$(get_env app-name)"
