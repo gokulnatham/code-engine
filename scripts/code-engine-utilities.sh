@@ -247,7 +247,7 @@ setup-ce-env-entity_() {
     done
   fi
 
-  if [ ! -s "$props" ]; then
+  if [ -s "$props" ]; then
     cat "$props"
     # shellcheck disable=SC2086
     if ibmcloud ce $kind get --name "$scope-$kind" > /dev/null 2>&1; then
@@ -260,5 +260,7 @@ setup-ce-env-entity_() {
       ibmcloud ce $kind create --name "$scope-$kind" --from-env-file "$props"
     fi
     set_env "ce-env-$kind" "$scope-$kind"
+  else
+    set_env "ce-env-$kind" ""
   fi
 }
