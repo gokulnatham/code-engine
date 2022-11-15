@@ -211,10 +211,22 @@ setup-ce-env-entity_() {
     properties_files_path="/config/environment-properties"
   fi
 
-  if [ "$(ls -1 $properties_files_path | wc -l)" == "0" ]; then
+  if [ "$(ls -1 "${properties_files_path}/${prefix}CE_ENV_*" | wc -l)" == "0" ]; then
     echo "No properties found to create code engine $kind for $scope"
   else
-    ls $properties_files_path
+    props=$(mktemp)
+    for prop in $(ls -1 "${properties_files_path}/${prefix}CE_ENV_*"); do
+      echo "${prop##${prefix}CE_ENV_}=$(cat ${properties_files_path}/$prop)" >> $props
+    done
+    cat $props
+
+    if ibmcloud ce $kind get --name $scope-$kind; then
+      echo "$kind $scope-$kind already exists. Updating it"
+      ibmcloud ce $kind update --name $scope-$kind --from-env-file $props
+    else
+      echo "$kind $scope-$kind does not exist. Creating it"
+      ibmcloud ce $kind create --name $scope-$kind --from-env-file $props
+    fi
     set_env ce-env-$kind $scope-$kind
   fi
 }
