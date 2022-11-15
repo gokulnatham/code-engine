@@ -178,3 +178,43 @@ bind-services-to-code-engine_() {
     fi
   done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
 }
+
+setup-env-configmap() {
+  local scope=$1
+  # filter the pipeline/trigger non-secured properties with ${scope}CE_ENV prefix and create the configmap
+  # if there is some properties, create/update the configmap for this given scope
+  # and set it as set_env ce-env-configmap
+  setup-env_entity_ "$scope" "configmap"
+}
+
+setup-env-secret() {
+  local scope=$1
+  # filter the pipeline/trigger secured properties with ${scope}CE_ENV prefix and create the configmap
+  # if there is some properties, create/update the secret for this given scope
+  # and set it as set_env ce-env-secret
+  setup-env_entity_ "$scope" "secret"
+}
+
+setup-env_entity_() {
+  local scope=$1
+  local kind=$2
+  local prefix
+  if [ -n "$scope" ]; then
+    prefix="${scope}_"
+  else
+    prefix=""
+  fi
+
+  if [ "$kind" == "secret" ]; then
+    properties_files_path="/config/secure-properties"
+  else
+    properties_files_path="/config/environment-properties"
+  fi
+
+  if [ "$(ls -1 $properties_files_path | wc -l)" == "0" ]; then
+    echo "No properties found to create code engine $kind for $scope"
+  else
+    ls $properties_files_path
+    set_env ce-env-$kind $scope-$kind
+  fi
+}
