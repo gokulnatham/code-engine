@@ -202,7 +202,7 @@ setup-ce-env-configmap() {
   # filter the pipeline/trigger non-secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the configmap for this given scope
   # and set it as set_env ce-env-configmap
-  setup-ce-env-entity_ "$scope" "configmap"
+  setup-ce-env-entity_ "configmap" "$scope"
 }
 
 setup-ce-env-secret() {
@@ -210,12 +210,12 @@ setup-ce-env-secret() {
   # filter the pipeline/trigger secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the secret for this given scope
   # and set it as set_env ce-env-secret
-  setup-ce-env-entity_ "$scope" "secret"
+  setup-ce-env-entity_ "secret" "$scope"
 }
 
 setup-ce-env-entity_() {
-  local scope=$1
-  local kind=$2
+  local kind=$1
+  local scope=$2
   local prefix
   if [ -n "$scope" ]; then
     prefix="${scope}_"
@@ -229,25 +229,36 @@ setup-ce-env-entity_() {
     properties_files_path="/config/environment-properties"
   fi
 
+  props=$(mktemp)
   # shellcheck disable=SC2086,SC2012
-  if [ "$(ls -1 ${properties_files_path}/${prefix}CE_ENV_* | wc -l)" == "0" ]; then
-    echo "No properties found to create code engine $kind for $scope"
-  else
-    props=$(mktemp)
+  if [ "$(ls -1 ${properties_files_path}/CE_ENV_* 2>/dev/null | wc -l)" != "0" ]; then
+    # shellcheck disable=SC2086,SC2012
+    for prop in "${properties_files_path}/CE_ENV_"*; do
+      # shellcheck disable=SC2295
+      echo "${prop##${properties_files_path}/CE_ENV_}=$(cat $prop)" >> $props
+    done
+  fi
+  # shellcheck disable=SC2086,SC2012
+  if [ "$(ls -1 ${properties_files_path}/${prefix}CE_ENV_* 2>/dev/null | wc -l)" != "0" ]; then
     # shellcheck disable=SC2086,SC2012
     for prop in "${properties_files_path}/${prefix}CE_ENV_"*; do
       # shellcheck disable=SC2295
       echo "${prop##${properties_files_path}/${prefix}CE_ENV_}=$(cat $prop)" >> $props
     done
-    cat $props
+  fi
 
-    if ibmcloud ce $kind get --name $scope-$kind; then
+  if [ ! -s "$props" ]; then
+    cat "$props"
+    # shellcheck disable=SC2086
+    if ibmcloud ce $kind get --name "$scope-$kind" > /dev/null 2>&1; then
       echo "$kind $scope-$kind already exists. Updating it"
-      ibmcloud ce $kind update --name $scope-$kind --from-env-file $props
+      # shellcheck disable=SC2086
+      ibmcloud ce $kind update --name "$scope-$kind" --from-env-file "$props"
     else
       echo "$kind $scope-$kind does not exist. Creating it"
-      ibmcloud ce $kind create --name $scope-$kind --from-env-file $props
+      # shellcheck disable=SC2086
+      ibmcloud ce $kind create --name "$scope-$kind" --from-env-file "$props"
     fi
-    set_env ce-env-$kind $scope-$kind
+    set_env "ce-env-$kind" "$scope-$kind"
   fi
 }

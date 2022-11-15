@@ -9,8 +9,7 @@ if ! initialize-code-engine-project-context; then
 fi
 
 # Configure the secret for registry credentials
-if ibmcloud ce registry get --name "${PIPELINE_ID}" > /dev/null 2>&1 ;
-  then
+if ibmcloud ce registry get --name "${PIPELINE_ID}" > /dev/null 2>&1; then
   echo "${PIPELINE_ID} Secret to push and pull the image already exists."
 else
   echo "Secret to push and pull the image does not exists, Creating it......."
