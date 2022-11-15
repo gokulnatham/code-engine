@@ -72,8 +72,6 @@ deploy:
       set -x
     fi
 
-    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
-
     # use different deployment process depending on CI or CD
     if [[ "$(get_env pipeline_namespace)" == *"cd"* ]]; then
       INVENTORY_PATH="$(get_env inventory-path)"
@@ -90,6 +88,8 @@ deploy:
         echo "Deploying $INVENTORY_ENTRY"
         set_env app-name "$(jq -r '.app_artifacts.name' ${INVENTORY_PATH}/${INVENTORY_ENTRY})"
         code_engine_entity_type=$(jq -r '.app_artifacts.code_engine_entity_type' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
+        IMAGE=$(jq -r '.artifact' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
+        source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
         if [ "$code_engine_entity_type" == "job" ]; then
           source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
         else
@@ -100,6 +100,7 @@ deploy:
       done
     else
       IMAGE=$(load_artifact app-image name)
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
       if [ "$(get_env code-engine-entity-type "application")" == "job" ]; then
         source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
       else
