@@ -97,6 +97,9 @@ deploy-code-engine-application() {
   local image=$2
   local image_pull_secret=$3
 
+  # scope/prefix for env property for given environment properties
+  local prefix="${application}_"
+
   if [ -n "$(get_env ce-env-configmap "")" ]; then
     env_cm_param="--env-from-configmap $(get_env ce-env-configmap)"
   fi
@@ -111,12 +114,11 @@ deploy-code-engine-application() {
       -i "${image}" \
       --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
       -w=false \
-      --cpu "$(get_env cpu "0.25")" \
-      --max "$(get_env max-scale "1")" \
-      --min "$(get_env min-scale "0")" \
-      -m "$(get_env memory "0.5G")" \
-      -p "$(get_env port "http1:8080")"
-      # TODO take in account --cmd --arg
+      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+      --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
+      --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
+      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+      -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"
   else
     echo "Code Engine app with name ${application} not found, creating it"
     # shellcheck disable=SC2086
@@ -124,12 +126,11 @@ deploy-code-engine-application() {
       -i "${image}" \
       --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
       -w=false \
-      --cpu "$(get_env cpu "0.25")" \
-      --max "$(get_env max-scale "1")" \
-      --min "$(get_env min-scale "0")" \
-      -m "$(get_env memory "0.5G")" \
-      -p "$(get_env port "http1:8080")"
-      # TODO take in account --cmd --arg
+      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+      --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
+      --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
+      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+      -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"
   fi
 }
 
@@ -154,10 +155,9 @@ deploy-code-engine-job() {
       -i "${image}" \
       --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
       -w=false \
-      --cpu "$(get_env cpu "0.25")" \
-      -m "$(get_env memory "0.5G")" \
-      --maxexecutiontime "$(get_env maxexecutiontime "7200")"
-      # TODO take in account --cmd --arg
+      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+      --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")"
   else
     echo "Code Engine job with name ${job} not found, creating it"
     # shellcheck disable=SC2086
@@ -165,10 +165,9 @@ deploy-code-engine-job() {
       -i "${image}" \
       --rs "${image_pull_secret}" \
       -w=false \
-      --cpu "$(get_env cpu "0.25")" \
-      -m "$(get_env memory "0.5G")" \
-      --maxexecutiontime "$(get_env maxexecutiontime "7200")"
-      # TODO take in account --cmd --arg
+      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+      --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")"
   fi
 }
 
