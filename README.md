@@ -31,4 +31,5 @@ The samples are located in different location to illustrate build strategy using
 Example:
 
 `hello-ce-dockerfile-app_CE_ENV_TARGET` : _Everybody_
+
 `hello-ce-dockerfile-app_memory` : 1G
