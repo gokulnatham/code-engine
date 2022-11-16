@@ -110,27 +110,33 @@ deploy-code-engine-application() {
   if ibmcloud ce app get -n "${application}" > /dev/null 2>&1; then
     echo "Code Engine app with name ${application} found, updating it"
     # shellcheck disable=SC2086
-    ibmcloud ce app update -n "${application}" \
-      -i "${image}" \
-      --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
-      -w=false \
-      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-      --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
-      --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
-      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-      -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"
+    if ! ibmcloud ce app update -n "${application}" \
+        -i "${image}" \
+        --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
+        -w=false \
+        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+        --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
+        --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
+        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+        -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"; then
+      echo "ibmcloud ce app update failed."
+      return 1
+    fi
   else
     echo "Code Engine app with name ${application} not found, creating it"
     # shellcheck disable=SC2086
-    ibmcloud ce app create -n "${application}" \
-      -i "${image}" \
-      --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
-      -w=false \
-      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-      --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
-      --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
-      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-      -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"
+    if ! ibmcloud ce app create -n "${application}" \
+        -i "${image}" \
+        --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
+        -w=false \
+        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+        --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
+        --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
+        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+        -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"; then
+      echo "ibmcloud ce app create failed."
+      return 1
+    fi
   fi
 }
 
@@ -151,23 +157,29 @@ deploy-code-engine-job() {
   if ibmcloud ce job get -n "${job}" > /dev/null 2>&1; then
     echo "Code Engine job with name ${job} found, updating it"
     # shellcheck disable=SC2086
-    ibmcloud ce job update -n "${job}" \
-      -i "${image}" \
-      --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
-      -w=false \
-      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-      --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")"
+    if ! ibmcloud ce job update -n "${job}" \
+        -i "${image}" \
+        --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
+        -w=false \
+        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+        --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")"; then
+      echo "ibmcloud ce job update failed."
+      return 1
+    fi
   else
     echo "Code Engine job with name ${job} not found, creating it"
     # shellcheck disable=SC2086
-    ibmcloud ce job create -n "${job}" \
-      -i "${image}" \
-      --rs "${image_pull_secret}" \
-      -w=false \
-      --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-      -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-      --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")"
+    if ! ibmcloud ce job create -n "${job}" \
+        -i "${image}" \
+        --rs "${image_pull_secret}" \
+        -w=false \
+        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
+        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+        --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")";  then
+      echo "ibmcloud ce job create failed."
+      return 1
+    fi
   fi
 }
 
