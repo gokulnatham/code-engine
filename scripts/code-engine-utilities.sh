@@ -163,6 +163,7 @@ deploy-code-engine-job() {
         -w=false \
         --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
         -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+        --retrylimit "$(get_env "${prefix}retrylimit" "$(get_env retrylimit "3")")" \
         --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")"; then
       echo "ibmcloud ce job update failed."
       return 1
@@ -176,6 +177,7 @@ deploy-code-engine-job() {
         -w=false \
         --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
         -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
+        --retrylimit "$(get_env "${prefix}retrylimit" "$(get_env retrylimit "3")")" \
         --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")";  then
       echo "ibmcloud ce job create failed."
       return 1

@@ -17,9 +17,18 @@ The samples are located in different location to illustrate build strategy using
 | `code-engine-build-strategy` | `dockerfile` | The build strategy for the code engine entity. It can be `dockerfile` or `buildpacks` |
 | `source` | | path to the location of code to build in the repository | |
 | `CE_ENV_\<XXXX\>` |  | pipeline/trigger property (secured or not) to provide value for code engine environment variable \<XXXX\> | |
+| `cpu` | `0.25` | The amount of CPU set for the instance of the application or job. For valid values, see [Supported memory and CPU combinations](https://cloud.ibm.com/docs/codeengine?topic=codeengine-mem-cpu-combo). | |
+| `memory` | `0.5G` | The amount of memory set for the instance of the application or job. Use `M` for megabytes or `G` for gigabytes. For valid values, see [Supported memory and CPU combinations](https://cloud.ibm.com/docs/codeengine?topic=codeengine-mem-cpu-combo). | |
+| `maxexecutiontime` | `7200` | The maximum execution time in seconds for runs of the job. | |
+| `retrylimit` | `3` | The number of times to rerun an instance of the job before the job is marked as failed | |
+| `port` | `http1:8080` | The port where the application listens. The format is `[NAME:]PORT`, where `[NAME:]` is optional. If `[NAME:]` is specified, valid values are `h2c`, or `http1`. When `[NAME:]` is not specified or is `http1`, the port uses `HTTP/1.1`. When `[NAME:]` is `h2c`, the port uses unencrypted `HTTP/2`. | |
+| `min-scale` | `0` | The minimum number of instances that can be used for this application. This option is useful to ensure that no instances are running when not needed | |
+| `max-scale` | `1` | The maximum number of instances that can be used for this application. If you set this value to 0, the application scales as needed. The application scaling is limited only by the instances per the resource quota for the project of your application. See [Limits and quotas for Code Engine](https://cloud.ibm.com/docs/codeengine?topic=codeengine-limits) | |
+
 
 <u>Note</u>: As part of CD deployment process, to scope configuration/environment variables for a given inventory entry, you can prefix the property with the inventory entry name like `<inventory_entry>_`.
 
 Example:
 
 `hello-ce-dockerfile-app_CE_ENV_TARGET` : _Everybody_
+`hello-ce-dockerfile-app_memory` : 1G
