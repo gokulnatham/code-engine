@@ -82,10 +82,11 @@ initialize-code-engine-project-context() {
     return 1
   fi
 
-  # check to see if $IBMCLOUD_CE_RG is not the default resource group
-  if [ "$(ibmcloud resource groups --output json | jq -r --arg RG_NAME "$IBMCLOUD_CE_RG" '.[] | select(.name==$RG_NAME) | .default')" == 'false' ]; then
-    echo "Updating Code Engine project to bind to resource group $IBMCLOUD_CE_RG..."
-    ibmcloud ce project update --binding-resource-group "$IBMCLOUD_CE_RG"
+  # Add service binding resource group to the project if specified
+  IBMCLOUD_CE_BINDING_RG=$(get_env code-engine-binding-resource-group "")
+  if [ -n "$IBMCLOUD_CE_BINDING_RG" ]; then
+    echo "Updating Code Engine project to bind to resource group $IBMCLOUD_CE_BINDING_RG..."
+    ibmcloud ce project update --binding-resource-group "$IBMCLOUD_CE_BINDING_RG"
   fi
 
 }
@@ -147,6 +148,9 @@ deploy-code-engine-job() {
   local image=$2
   local image_pull_secret=$3
 
+  # scope/prefix for env property for given environment properties
+  local prefix="${job}_"
+
   if [ -n "$(get_env ce-env-configmap "")" ]; then
     env_cm_param="--env-from-configmap $(get_env ce-env-configmap)"
   fi
@@ -200,14 +204,41 @@ bind-services-to-code-engine_() {
 
   local kind=$1
   local ce_element=$2
-  # shellcheck disable=SC2162,SC2046,SC2005
-  while read; do
-    NAME=$(echo "$REPLY" | jq -j '.key')
-    PREFIX=$(echo "$REPLY" | jq -j '.value')
-    if ! ibmcloud ce "$kind" get -n "$ce_element" | grep "$NAME"; then
-        ibmcloud ce "$kind" bind -n "$ce_element" --si "$NAME" -p "$PREFIX" -w=false
+
+  # scope/prefix for env property for given environment properties
+  local prefix="${ce_element}_"
+
+  sb_property_file="$CONFIG_DIR/${prefix}service-bindings"
+  if [ ! -f "$sb_property_file" ]; then
+    sb_property_file="$CONFIG_DIR/service-bindings"
+    if [ ! -f "$sb_property_file" ]; then
+      sb_property_file=""
     fi
-  done < <(jq -c 'to_entries | .[]' <<<$(echo $(get_env service-bindings "") | base64 -d))
+  fi
+  if [ -n "$sb_property_file" ]; then
+    echo "bind services to code-engine $kind $ce_element"
+    # ensure well-formatted json
+    if ! jq '.' "$sb_property_file"; then
+      echo "Invalid JSON in $sb_property_file"
+      return 1
+    fi
+    # shellcheck disable=SC2162
+    while read; do
+      NAME=$(echo "$REPLY" | jq -r 'if type=="string" then . else (to_entries[] | .key) end')
+      PREFIX=$(echo "$REPLY" | jq -r 'if type=="string" then empty else (to_entries[] | .value) end')
+      if [ -n "$PREFIX" ]; then
+        prefix_arg="-p $PREFIX"
+      else
+        prefix_arg=""
+      fi
+      echo "Binding $NAME to $kind $ce_element  with prefix '$PREFIX'"
+      # shellcheck disable=SC2086
+      if ! ibmcloud ce $kind bind -n "$ce_element" --si "$NAME" $prefix_arg -w=false; then
+        echo "Fail to bind $NAME to $kind $ce_element with prefix '$PREFIX'"
+        return 1
+      fi
+    done < <(jq -c '.[]' "$sb_property_file" )
+  fi
 }
 
 setup-ce-env-configmap() {

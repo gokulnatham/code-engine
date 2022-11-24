@@ -12,7 +12,10 @@ if ! deploy-code-engine-application "$(get_env app-name)" "${IMAGE}" "${IMAGE_PU
 fi
 
 # Bind services, if any
-bind-services-to-code-engine-application "$(get_env app-name)"
+if ! bind-services-to-code-engine-application "$(get_env app-name)"; then
+  echo "Failure in services binding to code engine application. Exiting 1"
+  exit 1
+fi
 
 echo "Checking if application is ready..."
 KUBE_SERVICE_NAME=$(get_env app-name)

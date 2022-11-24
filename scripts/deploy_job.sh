@@ -12,7 +12,10 @@ if ! deploy-code-engine-job "$(get_env app-name)" "${IMAGE}" "${IMAGE_PULL_SECRE
 fi
 
 # Bind services, if any
-bind-services-to-code-engine-job "$(get_env app-name)"
+if ! bind-services-to-code-engine-job "$(get_env app-name)"; then
+  echo "Failure in services binding to code engine job. Exiting 1"
+  exit 1
+fi
 
 echo "Checking if job is ready..."
 # TODO
