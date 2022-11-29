@@ -208,6 +208,9 @@ bind-services-to-code-engine_() {
   # scope/prefix for env property for given environment properties
   local prefix="${ce_element}_"
 
+  # if there is some existing bindings, first remove them all
+  ibmcloud ce $kind unbind -n "$ce_element" --all --quiet
+
   sb_property_file="$CONFIG_DIR/${prefix}service-bindings"
   if [ ! -f "$sb_property_file" ]; then
     sb_property_file="$CONFIG_DIR/service-bindings"
