@@ -9,10 +9,6 @@
 . "${ONE_PIPELINE_PATH}/tools/get_repo_params"
 
 APP_REPO="$(load_repo app-repo url)"
-APP_REPO_ORG=${APP_REPO%/*}
-APP_REPO_ORG=${APP_REPO_ORG##*/}
-APP_REPO_NAME=${APP_REPO##*/}
-APP_REPO_NAME=${APP_REPO_NAME%.git}
 
 COMMIT_SHA="$(load_repo app-repo commit)"
 
