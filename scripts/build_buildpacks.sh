@@ -32,10 +32,10 @@ ibmcloud cr region-set "${cr_region##ibm:yp:}"
 ibmcloud cr image-digests --restrict "$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME" --json > "$digest"
 # parse the json to find the id
 DIGEST=$(jq -r \
-  --arg repo "$ICR_REGISTRY_REGION.icr.io/$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME" \
+  --arg repo "$ICR_REGISTRY_DOMAIN/$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME" \
   --arg tag "$IMAGE_TAG" '.[] | select(.repoTags[$repo][$tag].issueCount >= 0) | .id' "$digest")
 
-echo "Found digest $DIGEST for $ICR_REGISTRY_REGION.icr.io/$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME:$IMAGE_TAG"
+echo "Found digest $DIGEST for $ICR_REGISTRY_DOMAIN/$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME:$IMAGE_TAG"
 
 #
 # Save the artifact to the pipeline,
@@ -74,7 +74,7 @@ if [[ "${TAG}" ]]; then
         # shellcheck disable=SC2001
         TEMP_TAG=$(echo "$TEMP_TAG" | sed -e 's/^[[:space:]]*//')
         echo "adding tag $i $TEMP_TAG"
-        ADDITIONAL_IMAGE_TAG="$ICR_REGISTRY_REGION.icr.io"/"$ICR_REGISTRY_NAMESPACE"/"$IMAGE_NAME":"$TEMP_TAG"
+        ADDITIONAL_IMAGE_TAG="$ICR_REGISTRY_DOMAIN/$ICR_REGISTRY_NAMESPACE/$IMAGE_NAME:$TEMP_TAG"
         docker tag "$IMAGE" "$ADDITIONAL_IMAGE_TAG"
         docker push "$ADDITIONAL_IMAGE_TAG"
 
