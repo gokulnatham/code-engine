@@ -355,7 +355,7 @@ setup-ce-env-entity_() {
       operation="create"
     fi
     # shellcheck disable=SC2086
-    ibmcloud ce $kind create --name "$scope-$kind" --from-env-file "$props"
+    ibmcloud ce $kind $operation --name "$scope-$kind" --from-env-file "$props"
     set_env "ce-env-$kind" "$scope-$kind"
   else
     set_env "ce-env-$kind" ""
