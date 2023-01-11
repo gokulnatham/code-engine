@@ -342,14 +342,20 @@ setup-ce-env-entity_() {
   if [ -s "$props" ]; then
     # shellcheck disable=SC2086
     if ibmcloud ce $kind get --name "$scope-$kind" > /dev/null 2>&1; then
-      echo "$kind $scope-$kind already exists. Updating it"
-      # shellcheck disable=SC2086
-      ibmcloud ce $kind update --name "$scope-$kind" --from-env-file "$props"
+      # configmap get does not fail if non existing - use the json output to ensure existing or no
+      if [ -z "$(ibmcloud ce $kind get --name "$scope-$kind" --output json | jq -r '.metatadata.name//empty')" ]; then
+        echo "$kind $scope-$kind does not exist. Creating it"
+        operation="create"
+      else
+        echo "$kind $scope-$kind already exists. Updating it"
+        operation="update"
+      fi
     else
       echo "$kind $scope-$kind does not exist. Creating it"
-      # shellcheck disable=SC2086
-      ibmcloud ce $kind create --name "$scope-$kind" --from-env-file "$props"
+      operation="create"
     fi
+    # shellcheck disable=SC2086
+    ibmcloud ce $kind create --name "$scope-$kind" --from-env-file "$props"
     set_env "ce-env-$kind" "$scope-$kind"
   else
     set_env "ce-env-$kind" ""
