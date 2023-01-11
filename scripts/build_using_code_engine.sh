@@ -9,8 +9,12 @@ if ! initialize-code-engine-project-context; then
 fi
 
 # Configure the secret for registry credentials
-if ibmcloud ce registry get --name "${PIPELINE_ID}" > /dev/null 2>&1; then
-  echo "${PIPELINE_ID} Secret to push and pull the image already exists."
+IBMCLOUD_TOOLCHAIN_ID="$(jq -r .toolchain_guid /toolchain/toolchain.json)"
+REGISTRY_URL=$(echo "${IMAGE}" | awk -F/ '{print $1}')
+REGISTRY_SECRET_NAME="ibmcloud-toolchain-${IBMCLOUD_TOOLCHAIN_ID}-${REGISTRY_URL}"
+
+if ibmcloud ce registry get --name "${REGISTRY_SECRET_NAME}" > /dev/null 2>&1; then
+  echo "${REGISTRY_SECRET_NAME} Secret to push and pull the image already exists."
 else
   echo "Secret to push and pull the image does not exists, Creating it......."
   if [ -f /config/api-key ]; then
@@ -18,11 +22,57 @@ else
   else
     ICR_API_KEY="$(get_env ibmcloud-api-key)" # pragma: allowlist secret
   fi
-  ibmcloud ce registry create  --name "${PIPELINE_ID}" --email a@b.com  --password="$ICR_API_KEY" --server "$(echo "$IMAGE" |  awk -F/ '{print $1}')" --username iamapikey
+  ibmcloud ce registry create --name "${REGISTRY_SECRET_NAME}" --email a@b.com  --password="$ICR_API_KEY" --server "$(echo "$IMAGE" |  awk -F/ '{print $1}')" --username iamapikey
 fi
 
-echo "using Buildpacks to build application"
-ibmcloud ce buildrun submit --name "${PIPELINE_RUN_ID}" --strategy buildpacks --image "$IMAGE" --registry-secret "${PIPELINE_ID}" --source "$WORKSPACE/$(load_repo app-repo path)/$(get_env source "")" --context-dir "." --wait
+#
+# Check whether the repository defined a .ceignore to set optimize the build
+# See https://cloud.ibm.com/docs/codeengine?topic=codeengine-plan-build#build-plan-repo
+cd "$WORKSPACE/$(load_repo app-repo path)/$(get_env source "")"
+if [ ! -f ".ceignore" ]; then
+  echo "File .ceignore does not exist. Using '.dockerignore' or '.gitignore' instead"
+
+  # Given the order of copy statements, .dockerignore will be used to define the .ceignore if present
+  [ -f .gitignore ] && cp .gitignore .ceignore
+  [ -f .dockerignore ] && cp .dockerignore .ceignore
+fi
+if [ -f ".ceignore" ]; then
+  echo "Following file patterns aren't considered as part of the build:"
+  cat .ceignore
+fi
+
+build_strategy="$(get_env code-engine-build-strategy "dockerfile")"
+build_size="$(get_env code-engine-build-size "medium")"
+build_timeout="$(get_env code-engine-build-timeout "600")"
+source="$WORKSPACE/$(load_repo app-repo path)/$(get_env source "")"
+context_dir="$(get_env context-dir ".")"
+dockerfile="$(get_env dockerfile "Dockerfile")"
+
+# Printing build configuration, prior submitting it
+echo "Using Code Engine to build the container image '$IMAGE'."
+echo "   strategy: $build_strategy"
+echo "   source: $source"
+echo "   registry-secret: $REGISTRY_SECRET_NAME"
+echo "   context-dir: $context_dir"
+echo "   dockerfile: $dockerfile"
+echo "   size: $build_size"
+echo "   timeout: $build_timeout"
+
+BUILD_RUN_NAME="toolchain-run-${PIPELINE_RUN_ID}"
+ibmcloud ce buildrun submit --name "${BUILD_RUN_NAME}" \
+  --strategy "$build_strategy" \
+  --image "$IMAGE" \
+  --registry-secret "${REGISTRY_SECRET_NAME}" \
+  --source "$source" \
+  --context-dir "$context_dir" \
+  --dockerfile "$dockerfile" \
+  --size "$build_size" \
+  --timeout "$build_timeout" \
+  --wait --wait-timeout "$build_timeout" \
+  || (ibmcloud ce buildrun logs --buildrun "${BUILD_RUN_NAME}" && exit 1)
+
+# Print the build run logs
+ibmcloud ce buildrun logs --buildrun "${BUILD_RUN_NAME}"
 
 # Use the icr cli command to retrieve the DIGEST it would prevent to pull back the built image
 digest=$(mktemp)

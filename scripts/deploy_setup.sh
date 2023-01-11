@@ -8,19 +8,19 @@ if ! initialize-code-engine-project-context; then
   exit 1
 fi
 
-echo -e "Configuring access to private image registry"
-if [ -f /config/api-key ]; then
-  IBMCLOUD_API_KEY="$(cat /config/api-key)" # pragma: allowlist secret
-else
-  IBMCLOUD_API_KEY="$(get_env ibmcloud-api-key)" # pragma: allowlist secret
-fi
+# Configure the secret for registry credentials
 IBMCLOUD_TOOLCHAIN_ID="$(jq -r .toolchain_guid /toolchain/toolchain.json)"
 REGISTRY_URL=$(echo "${IMAGE}" | awk -F/ '{print $1}')
-export IMAGE_PULL_SECRET_NAME
-IMAGE_PULL_SECRET_NAME="ibmcloud-toolchain-${IBMCLOUD_TOOLCHAIN_ID}-${REGISTRY_URL}"
+export REGISTRY_SECRET_NAME="ibmcloud-toolchain-${IBMCLOUD_TOOLCHAIN_ID}-${REGISTRY_URL}"
 
-if ! kubectl get secret "${IMAGE_PULL_SECRET_NAME}"; then
-    echo -e "${IMAGE_PULL_SECRET_NAME} not found, creating it"
-    # for Container Registry, docker username is 'token' and email does not matter
-    kubectl create secret docker-registry "${IMAGE_PULL_SECRET_NAME}" --docker-server="${REGISTRY_URL}" --docker-password="${IBMCLOUD_API_KEY}" --docker-username=iamapikey --docker-email=a@b.com
+if ibmcloud ce registry get --name "${REGISTRY_SECRET_NAME}" > /dev/null 2>&1; then
+  echo "${REGISTRY_SECRET_NAME} Secret to push and pull the image already exists."
+else
+  echo "Secret to push and pull the image does not exists, Creating it......."
+  if [ -f /config/api-key ]; then
+    ICR_API_KEY="$(cat /config/api-key)" # pragma: allowlist secret
+  else
+    ICR_API_KEY="$(get_env ibmcloud-api-key)" # pragma: allowlist secret
+  fi
+  ibmcloud ce registry create --name "${REGISTRY_SECRET_NAME}" --email a@b.com  --password="$ICR_API_KEY" --server "$(echo "$IMAGE" |  awk -F/ '{print $1}')" --username iamapikey
 fi

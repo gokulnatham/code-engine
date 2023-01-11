@@ -110,34 +110,59 @@ deploy-code-engine-application() {
 
   if ibmcloud ce app get -n "${application}" > /dev/null 2>&1; then
     echo "Code Engine app with name ${application} found, updating it"
-    # shellcheck disable=SC2086
-    if ! ibmcloud ce app update -n "${application}" \
-        -i "${image}" \
-        --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
-        -w=false \
-        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-        --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
-        --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
-        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-        -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"; then
-      echo "ibmcloud ce app update failed."
-      return 1
-    fi
+    operation="update"
   else
     echo "Code Engine app with name ${application} not found, creating it"
-    # shellcheck disable=SC2086
-    if ! ibmcloud ce app create -n "${application}" \
-        -i "${image}" \
-        --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
-        -w=false \
-        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-        --max "$(get_env "${prefix}max-scale" "$(get_env max-scale "1")")" \
-        --min "$(get_env "${prefix}min-scale" "$(get_env min-scale "0")")" \
-        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-        -p "$(get_env "${prefix}port" "$(get_env port "http1:8080")")"; then
-      echo "ibmcloud ce app create failed."
-      return 1
-    fi
+    operation="create"
+  fi
+
+  local cpu
+  cpu="$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")"
+  local memory
+  memory="$(get_env "${prefix}memory" "$(get_env memory "0.5G")")"
+  local ephemeral_storage
+  ephemeral_storage="$(get_env "${prefix}ephemeral-storage" "$(get_env ephemeral-storage "0.4G")")"
+  local min
+  min="$(get_env "${prefix}app-min-scale" "$(get_env app-min-scale "0")")"
+  local max
+  max="$(get_env "${prefix}app-max-scale" "$(get_env app-max-scale "1")")"
+  local concurrency
+  concurrency="$(get_env "${prefix}app-concurrency" "$(get_env app-concurrency "100")")"
+  local visibility
+  visibility="$(get_env "${prefix}app-visibility" "$(get_env app-visibility "public")")"
+  local port
+  port="$(get_env "${prefix}app-port" "$(get_env app-port "8080")")"
+
+  echo "   image: $image"
+  echo "   registry-secret: $image_pull_secret"
+  echo "   env-from-configmap: $(get_env ce-env-configmap "")"
+  echo "   env-from-secret: $(get_env ce-env-secret "")"
+  echo "   cpu: $cpu"
+  echo "   memory: $memory"
+  echo "   ephemeral-storage: $ephemeral_storage"
+  echo "   min: $min"
+  echo "   max: $max"
+  echo "   concurrency: $concurrency"
+  echo "   visibility: $visibility"
+  echo "   port: $port"
+
+  # shellcheck disable=SC2086
+  if ! ibmcloud ce app $operation -n "${application}" \
+      --image "${image}" \
+      --registry-secret "${image_pull_secret}" \
+      $env_cm_param \
+      $env_secret_param \
+      --cpu "$cpu" \
+      --memory "$memory" \
+      --ephemeral-storage "$ephemeral_storage" \
+      --min "$min" \
+      --max "$max" \
+      --concurrency "$concurrency" \
+      --visibility "$visibility" \
+      --port "$port" \
+      --wait=false; then
+    echo "ibmcloud ce app $operation failed."
+    return 1
   fi
 }
 
@@ -160,32 +185,51 @@ deploy-code-engine-job() {
 
   if ibmcloud ce job get -n "${job}" > /dev/null 2>&1; then
     echo "Code Engine job with name ${job} found, updating it"
-    # shellcheck disable=SC2086
-    if ! ibmcloud ce job update -n "${job}" \
-        -i "${image}" \
-        --rs "${image_pull_secret}" $env_cm_param $env_secret_param \
-        -w=false \
-        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-        --retrylimit "$(get_env "${prefix}retrylimit" "$(get_env retrylimit "3")")" \
-        --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")"; then
-      echo "ibmcloud ce job update failed."
-      return 1
-    fi
+    operation="update"
   else
     echo "Code Engine job with name ${job} not found, creating it"
-    # shellcheck disable=SC2086
-    if ! ibmcloud ce job create -n "${job}" \
-        -i "${image}" \
-        --rs "${image_pull_secret}" \
-        -w=false \
-        --cpu "$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")" \
-        -m "$(get_env "${prefix}memory" "$(get_env memory "0.5G")")" \
-        --retrylimit "$(get_env "${prefix}retrylimit" "$(get_env retrylimit "3")")" \
-        --maxexecutiontime "$(get_env "${prefix}maxexecutiontime" "$(get_env maxexecutiontime "7200")")";  then
-      echo "ibmcloud ce job create failed."
-      return 1
-    fi
+    operation="create"
+  fi
+
+  local cpu
+  cpu="$(get_env "${prefix}cpu" "$(get_env cpu "0.25")")"
+  local memory
+  memory="$(get_env "${prefix}memory" "$(get_env memory "0.5G")")"
+  local ephemeral_storage
+  ephemeral_storage="$(get_env "${prefix}ephemeral-storage" "$(get_env ephemeral-storage "0.4G")")"
+  local retrylimit
+  retrylimit="$(get_env "${prefix}job-retrylimit" "$(get_env job-retrylimit "3")")"
+  local maxexecutiontime
+  maxexecutiontime="$(get_env "${prefix}job-maxexecutiontime" "$(get_env job-maxexecutiontime "7200")")"
+  local instances
+  instances="$(get_env "${prefix}job-instances" "$(get_env job-instances "1")")"
+
+  echo "   image: $image"
+  echo "   registry-secret: $image_pull_secret"
+  echo "   env-from-configmap: $(get_env ce-env-configmap "")"
+  echo "   env-from-secret: $(get_env ce-env-secret "")"
+  echo "   cpu: $cpu"
+  echo "   memory: $memory"
+  echo "   ephemeral-storage: $ephemeral_storage"
+  echo "   instances: $instances"
+  echo "   retrylimit: $retrylimit"
+  echo "   maxexecutiontime: $maxexecutiontime"
+
+  # shellcheck disable=SC2086
+  if ! ibmcloud ce job $operation -n "${job}" \
+      --image "${image}" \
+      --registry-secret "${image_pull_secret}" \
+      $env_cm_param \
+      $env_secret_param \
+      --cpu "$cpu" \
+      --memory "$memory" \
+      --ephemeral-storage "$ephemeral_storage" \
+      --instances "$instances" \
+      --retrylimit "$retrylimit" \
+      --maxexecutiontime "$maxexecutiontime" \
+      --wait=false; then
+    echo "ibmcloud ce job $operation failed."
+    return 1
   fi
 }
 
@@ -209,6 +253,7 @@ bind-services-to-code-engine_() {
   local prefix="${ce_element}_"
 
   # if there is some existing bindings, first remove them all
+  # shellcheck disable=SC2086
   ibmcloud ce $kind unbind -n "$ce_element" --all --quiet
 
   sb_property_file="$CONFIG_DIR/${prefix}service-bindings"

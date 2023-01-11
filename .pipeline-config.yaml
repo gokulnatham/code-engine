@@ -1,7 +1,7 @@
 version: '1'
 
 setup:
-  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.7@sha256:0444aa3cc5032ba4d7f7a59a4177dd43dc1126ad902f09079b0a66156bbe4bcf
+  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.11
   script: |
     #!/usr/bin/env bash
     if [[ "$PIPELINE_DEBUG" == 1 ]]; then
@@ -15,7 +15,7 @@ setup:
 
 test:
   abort_on_failure: false
-  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.7@sha256:0444aa3cc5032ba4d7f7a59a4177dd43dc1126ad902f09079b0a66156bbe4bcf
+  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.11
   script: |
     #!/usr/bin/env bash
 
@@ -42,7 +42,7 @@ test:
 
 containerize:
   dind: true
-  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.7@sha256:0444aa3cc5032ba4d7f7a59a4177dd43dc1126ad902f09079b0a66156bbe4bcf
+  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.11
   script: |
     #!/usr/bin/env bash
 
@@ -52,17 +52,18 @@ containerize:
       set -x
     fi
 
-    cd "../$(load_repo app-repo path)/$(get_env source "")"
-
     source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_setup.sh"
-    if [ "$(get_env code-engine-build-strategy "dockerfile")" == "dockerfile" ]; then
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_dockerfile.sh"
+    BUILD_STRATEGY="$(get_env code-engine-build-strategy "dockerfile")"
+    BUILD_USE_NATIVE_DOCKER="$(get_env code-engine-build-use-native-docker "false")"
+    echo "Configured build strategy: $BUILD_STRATEGY"
+    if [[ "$BUILD_STRATEGY" == "dockerfile" && "$BUILD_USE_NATIVE_DOCKER" == "true" ]]; then
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_using_docker.sh"
     else
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_buildpacks.sh"
+      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_using_code_engine.sh"
     fi
 
 deploy:
-  image: icr.io/continuous-delivery/pipeline/pipeline-base-image:2.19@sha256:482d28e51d5acc65471b366bbdcabc97f69e49da933337a7c42f45907cd63173
+  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.11
   script: |
     #!/usr/bin/env bash
 
@@ -87,10 +88,10 @@ deploy:
         echo "==============================================="
         echo "Deploying $INVENTORY_ENTRY"
         set_env app-name "$(jq -r '.app_artifacts.name' ${INVENTORY_PATH}/${INVENTORY_ENTRY})"
-        code_engine_entity_type=$(jq -r '.app_artifacts.code_engine_entity_type' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
+        code_engine_deployment_type=$(jq -r '.app_artifacts.code_engine_deployment_type' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
         IMAGE=$(jq -r '.artifact' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
         source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
-        if [ "$code_engine_entity_type" == "job" ]; then
+        if [ "$code_engine_deployment_type" == "job" ]; then
           source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
         else
           source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
@@ -101,7 +102,7 @@ deploy:
     else
       IMAGE=$(load_artifact app-image name)
       source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
-      if [ "$(get_env code-engine-entity-type "application")" == "job" ]; then
+      if [ "$(get_env code-engine-deployment-type "application")" == "job" ]; then
         source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
       else
         source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
@@ -110,7 +111,7 @@ deploy:
 
 acceptance-test:
   abort_on_failure: false
-  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.7@sha256:0444aa3cc5032ba4d7f7a59a4177dd43dc1126ad902f09079b0a66156bbe4bcf
+  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.11
   script: |
     #!/usr/bin/env bash
 
@@ -138,7 +139,7 @@ acceptance-test:
 
 release:
   abort_on_failure: false
-  image: icr.io/continuous-delivery/pipeline/pipeline-base-image:2.19@sha256:482d28e51d5acc65471b366bbdcabc97f69e49da933337a7c42f45907cd63173
+  image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.11
   script: |
     #!/usr/bin/env bash
 

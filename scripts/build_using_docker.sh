@@ -2,7 +2,20 @@
 
 set -euo pipefail
 
-docker build -t "${IMAGE}" .
+source="$WORKSPACE/$(load_repo app-repo path)/$(get_env source "")"
+context_dir="$(get_env context-dir ".")"
+dockerfile="$(get_env dockerfile "Dockerfile")"
+build_context="$(realpath -m "$source/$context_dir")"
+dockerfile_path="$(realpath -m "$build_context/$dockerfile")"
+
+echo "Using Docker CLI to build the container image '$IMAGE'."
+echo "   source: $source"
+echo "   context-dir: $context_dir"
+echo "   dockerfile: $dockerfile"
+echo "   docker build context: $build_context"
+echo "   dockerfile path: $dockerfile_path"
+
+docker build -t "${IMAGE}" -f "$dockerfile_path" "$build_context"
 docker push "${IMAGE}"
 
 DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}" | awk -F@ '{print $2}')"
