@@ -159,8 +159,7 @@ deploy-code-engine-application() {
       --max "$max" \
       --concurrency "$concurrency" \
       --visibility "$visibility" \
-      --port "$port" \
-      --wait=false; then
+      --port "$port"; then
     echo "ibmcloud ce app $operation failed."
     return 1
   fi
@@ -226,8 +225,7 @@ deploy-code-engine-job() {
       --ephemeral-storage "$ephemeral_storage" \
       --instances "$instances" \
       --retrylimit "$retrylimit" \
-      --maxexecutiontime "$maxexecutiontime" \
-      --wait=false; then
+      --maxexecutiontime "$maxexecutiontime"; then
     echo "ibmcloud ce job $operation failed."
     return 1
   fi
