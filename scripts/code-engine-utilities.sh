@@ -343,6 +343,7 @@ setup-ce-env-entity_() {
     if ibmcloud ce $kind get --name "$scope-$kind" > /dev/null 2>&1; then
       # configmap get does not fail if non existing - use the json output to ensure existing or no
       if [ -z "$(ibmcloud ce $kind get --name "$scope-$kind" --output json | jq -r '.metadata.name//empty')" ]; then
+        ibmcloud ce $kind get --name "$scope-$kind" --output json
         echo "$kind $scope-$kind does not exist. Creating it"
         operation="create"
       else
@@ -350,6 +351,7 @@ setup-ce-env-entity_() {
         operation="update"
       fi
     else
+      ibmcloud ce $kind get --name "$scope-$kind"
       echo "$kind $scope-$kind does not exist. Creating it"
       operation="create"
     fi
