@@ -159,7 +159,8 @@ deploy-code-engine-application() {
       --max "$max" \
       --concurrency "$concurrency" \
       --visibility "$visibility" \
-      --port "$port"; then
+      --port "$port" \
+      --wait=false; then
     echo "ibmcloud ce app $operation failed."
     return 1
   fi
