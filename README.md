@@ -14,8 +14,8 @@ The samples are located in different location to illustrate build strategy using
 | `code-engine-region` | region of the toolchain | the region to create/lookup for the code engine project | |
 | `code-engine-resource-group` | resource group of the toolchain | the resource group of the code engine project | |
 | `code-engine-binding-resource-group` | | The name of a resource group to use for authentication for the service bindings of the code engine project. A service ID is created with Operator and Manager roles for all services in this resource group. Use "*" to specify all resource groups in this account. See [Configuring a project for access to a resource group](https://cloud.ibm.com/docs/codeengine?topic=codeengine-bind-services#bind-config-proj) | |
-| `code-engine-deployment-type` | `application` | type of code engine entity to create/update as part of deployment. It can be either `application` or `job` | |
-| `code-engine-build-strategy` | `dockerfile` | The build strategy for the code engine entity. It can be `dockerfile` or `buildpacks` | |
+| `code-engine-deployment-type` | `application` | type of code engine component to create/update as part of deployment. It can be either `application` or `job` | |
+| `code-engine-build-strategy` | `dockerfile` | The build strategy for the code engine component. It can be `dockerfile` or `buildpacks` | |
 | `code-engine-build-use-native-docker` | `false` | Property to opt-in for using native docker build capabilities as opposed to use Code Engine build to containerize the source. Note this setting only takes effect if the build-strategy is set to 'dockerfile'. Valid values are 'true' and 'false'. | |
 | `code-engine-build-size` | `medium` | the size to use for the build, which determines the amount of resources used. Valid values include small, medium, large, xlarge. | |
 | `code-engine-build-timeout` | `600` | the amount of time, in seconds, that can pass before the build run must succeed or fail. | |

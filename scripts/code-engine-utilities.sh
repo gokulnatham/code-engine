@@ -293,7 +293,7 @@ setup-ce-env-configmap() {
   # filter the pipeline/trigger non-secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the configmap for this given scope
   # and set it as set_env ce-env-configmap
-  setup-ce-env-entity_ "configmap" "$scope"
+  setup-ce-env-component_ "configmap" "$scope"
 }
 
 setup-ce-env-secret() {
@@ -301,10 +301,10 @@ setup-ce-env-secret() {
   # filter the pipeline/trigger secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the secret for this given scope
   # and set it as set_env ce-env-secret
-  setup-ce-env-entity_ "secret" "$scope"
+  setup-ce-env-component_ "secret" "$scope"
 }
 
-setup-ce-env-entity_() {
+setup-ce-env-component_() {
   local kind=$1
   local scope=$2
   local prefix
