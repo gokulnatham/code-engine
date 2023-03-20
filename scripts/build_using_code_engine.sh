@@ -41,9 +41,39 @@ if [ -f ".ceignore" ]; then
   cat .ceignore
 fi
 
+#
+# Helper function which is used in case the Code Engine build fails.
+print_mustgather () {
+
+  echo ""
+  echo "Gathering details to help troubleshooting the problem ..."
+
+  echo ""
+  echo "Build run details:"
+  ibmcloud ce buildrun get --name "$1"
+
+  echo ""
+  echo "Build run events:"
+  ibmcloud ce buildrun events --name "$1"
+
+  echo ""
+  echo "Build run logs:"
+  ibmcloud ce buildrun logs --name "$1"
+
+  echo ""
+  echo "========================================================="
+  echo "BUILD FAILED"
+  echo "========================================================="
+  echo ""
+  echo "Please review the build details, events and logs printed above and check whether the output contains information which relates to the problem."
+  echo "Also, please see our troubleshooting guide https://cloud.ibm.com/docs/codeengine?topic=codeengine-ts-build-bldpush-stepfail and check for common issues."
+  echo ""
+}
+
 build_strategy="$(get_env code-engine-build-strategy "dockerfile")"
-build_size="$(get_env code-engine-build-size "medium")"
-build_timeout="$(get_env code-engine-build-timeout "600")"
+build_size="$(get_env code-engine-build-size "large")"
+build_timeout="$(get_env code-engine-build-timeout "1200")"
+wait_timeout="$(get_env code-engine-wait-timeout "1300")"
 source="$WORKSPACE/$(load_repo app-repo path)/$(get_env source "")"
 context_dir="$(get_env context-dir ".")"
 dockerfile="$(get_env dockerfile "Dockerfile")"
@@ -56,7 +86,8 @@ echo "   registry-secret: $REGISTRY_SECRET_NAME"
 echo "   context-dir: $context_dir"
 echo "   dockerfile: $dockerfile"
 echo "   size: $build_size"
-echo "   timeout: $build_timeout"
+echo "   build timeout: $build_timeout"
+echo "   wait timeout: $wait_timeout"
 
 BUILD_RUN_NAME="toolchain-run-${PIPELINE_RUN_ID}"
 ibmcloud ce buildrun submit --name "${BUILD_RUN_NAME}" \
@@ -68,8 +99,8 @@ ibmcloud ce buildrun submit --name "${BUILD_RUN_NAME}" \
   --dockerfile "$dockerfile" \
   --size "$build_size" \
   --timeout "$build_timeout" \
-  --wait --wait-timeout "$build_timeout" \
-  || (ibmcloud ce buildrun logs --buildrun "${BUILD_RUN_NAME}" && exit 1)
+  --wait --wait-timeout "$wait_timeout" \
+  || (print_mustgather "${BUILD_RUN_NAME}" && exit 1)
 
 # Print the build run logs
 ibmcloud ce buildrun logs --buildrun "${BUILD_RUN_NAME}"

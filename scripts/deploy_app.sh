@@ -19,8 +19,8 @@ fi
 
 echo "Checking if application is ready..."
 KUBE_SERVICE_NAME=$(get_env app-name)
-DEPLOYMENT_TIMEOUT=$(get_env deployment-timeout "300")
-echo "Timeout for the application deployment is ${DEPLOYMENT_TIMEOUT}"
+DEPLOYMENT_TIMEOUT=$(get_env app-deployment-timeout "300")
+echo "Timeout for the application deployment is ${DEPLOYMENT_TIMEOUT} seconds"
 ITERATION=0
 while [[ "${ITERATION}" -le "${DEPLOYMENT_TIMEOUT}" ]]; do
     sleep 1
@@ -32,17 +32,40 @@ while [[ "${ITERATION}" -le "${DEPLOYMENT_TIMEOUT}" ]]; do
         echo "Application not ready, retrying"
     elif [ -n "$SVC_STATUS_READY" ]; then
         echo "Application is ready"
+        ibmcloud ce app get --name "$(get_env app-name)"
         break
     else
         echo "Application status unknown, retrying"
     fi
     ITERATION="${ITERATION}"+1
 done
-echo "Application service details:"
-kubectl describe "ksvc/${KUBE_SERVICE_NAME}"
 # shellcheck disable=SC2166
 if [ \( -n "$SVC_STATUS_NOT_READY" \) -o \( -n "$SVC_STATUS_UNKNOWN" \) ]; then
+    echo ""
+    echo "Gathering details to help troubleshooting the problem ..."
+
+    echo ""
+    echo "Application details:"
+    ibmcloud ce app get --name "$(get_env app-name)" --output yaml
+
+    echo ""
+    echo "Application events:"
+    ibmcloud ce app events --app "$(get_env app-name)"
+
+    echo ""
+    echo "Application logs:"
+    ibmcloud ce app logs --app "$(get_env app-name)" --all
+
+    echo ""
+    echo "========================================================="
+    echo "DEPLOYMENT FAILED"
+    echo "========================================================="
     echo "Application is not ready after waiting maximum time"
+    echo ""
+    echo "Please review the app details, events and logs printed above and check whether the output contains information which relates to the problem."
+    echo "Also, please see our troubleshooting guide https://cloud.ibm.com/docs/codeengine?topic=codeengine-ts-app-neverready and check for common issues."
+    echo ""
+
     exit 1
 fi
 # Determine app url for polling from knative service
