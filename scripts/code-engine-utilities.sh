@@ -9,7 +9,9 @@ if [ "$PIPELINE_DEBUG" = "1" ]; then
   export IBMCLOUD_TRACE=true
 fi
 
+# shellcheck disable=SC1090,SC1091
 source "${ONE_PIPELINE_PATH}/tools/retry"
+# shellcheck disable=SC1090,SC1091
 source "${ONE_PIPELINE_PATH}/internal/tools/logging"
 
 ibmcloud_login() {

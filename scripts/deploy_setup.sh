@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# shellcheck source=./code-engine-utilities.sh
+# shellcheck disable=SC1090,SC1091
 source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/code-engine-utilities.sh"
 
 if ! initialize-code-engine-project-context; then
