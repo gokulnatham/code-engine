@@ -53,3 +53,6 @@ Example:
 * [Getting started with toolchains](https://cloud.ibm.com/devops/getting-started)
 * [DevSecOps with Continuous Delivery](https://cloud.ibm.com/docs/devsecops?topic=devsecops-devsecops_intro)
 * [Integrating Code Engine workloads with Continuous Delivery](https://cloud.ibm.com/docs/codeengine?topic=codeengine-toolchain-ce)
+
+## Report a problem or looking for help
+Get help directly from the IBM Cloud development teams by joining us on [Slack](https://ic-devops-slack-invite.us-south.devops.cloud.ibm.com/).
