@@ -103,16 +103,37 @@ deploy-code-engine-application() {
   # scope/prefix for env property for given environment properties
   local prefix="${application}_"
 
-  if [ -n "$(get_env ce-env-configmap "")" ]; then
-    env_cm_param="--env-from-configmap $(get_env ce-env-configmap)"
-  fi
-  if [ -n "$(get_env ce-env-secret "")" ]; then
-    env_secret_param="--env-from-secret $(get_env ce-env-secret)"
+  env_from_configmap_params="$(get_env "${prefix}env-from-configmaps" "$(get_env env-from-configmaps "")")"
+  if [ -n "$env_from_configmap_params" ]; then
+    # replace ; by appropriate parameter
+    env_from_configmap_params="--env-from-configmap ${env_from_configmap_params//;/ --env-from-configmap\ }"
   fi
 
-  if ibmcloud ce app get -n "${application}" > /dev/null 2>&1; then
+  if [ -n "$(get_env cd-auto-managed-env-configmap "")" ]; then
+    env_from_configmap_params="--env-from-configmap $(get_env cd-auto-managed-env-configmap) $env_from_configmap_params"
+  fi
+
+  env_from_secret_params="$(get_env "${prefix}env-from-secrets" "$(get_env env-from-secrets "")")"
+  if [ -n "$env_from_secret_params" ]; then
+    # replace ; by appropriate parameter
+    env_from_secret_params="--env-from-secret ${env_from_secret_params//;/ --env-from-secret\ }"
+  fi
+
+  if [ -n "$(get_env cd-auto-managed-env-secret "")" ]; then
+    env_from_secret_params="--env-from-secret $(get_env cd-auto-managed-env-secret) $env_from_secret_params"
+  fi
+
+  json_file=$(mktemp)
+  if ibmcloud ce app get -n "${application}" --output json > $json_file 2>&1; then
     echo "Code Engine app with name ${application} found, updating it"
     operation="update"
+    if [ "$(get_env remove-unspecified-references-to-configuration-resources "false")" == "true" ]; then
+      # ensure synchronization of references to configmaps or secrets for the given application
+      json_spec=$(jq -c '.spec.template.spec.containers[0]' $json_file)
+      env_from_configmap_rm_params=$(compute-env-configuration-resources-references-remove-parameters configmap "$json_spec" "$env_from_configmap_params")
+      env_from_secret_rm_params=$(compute-env-configuration-resources-references-remove-parameters secret "$json_spec" "$env_from_secret_params")
+      env_rm_params=$(compute-individual-configuration-resource-remove-parameters "$json_spec" "$env_from_configmap_params" "$env_from_secret_params")
+    fi
   else
     echo "Code Engine app with name ${application} not found, creating it"
     operation="create"
@@ -137,8 +158,17 @@ deploy-code-engine-application() {
 
   echo "   image: $image"
   echo "   registry-secret: $image_pull_secret"
-  echo "   env-from-configmap: $(get_env ce-env-configmap "")"
-  echo "   env-from-secret: $(get_env ce-env-secret "")"
+  echo "   env-from-configmap: $env_from_configmap_params"
+  echo "   env-from-secret: $env_from_secret_params"
+  if [ -n "$env_from_configmap_rm_params" ]; then
+    echo "   env-from-configmap-rm parameters: $env_from_configmap_rm_params"
+  fi
+  if [ -n "$env_from_secret_rm_params" ]; then
+    echo "   env-from-secret-rm parameters: $env_from_secret_rm_params"
+  fi
+  if [ -n "$env_rm_params" ]; then
+    echo "   env-rm parameters: $env_rm_params"
+  fi
   echo "   cpu: $cpu"
   echo "   memory: $memory"
   echo "   ephemeral-storage: $ephemeral_storage"
@@ -152,8 +182,11 @@ deploy-code-engine-application() {
   if ! ibmcloud ce app $operation -n "${application}" \
       --image "${image}" \
       --registry-secret "${image_pull_secret}" \
-      $env_cm_param \
-      $env_secret_param \
+      $env_from_configmap_params \
+      $env_from_secret_params \
+      $env_from_configmap_rm_params \
+      $env_from_secret_rm_params \
+      $env_rm_params \
       --cpu "$cpu" \
       --memory "$memory" \
       --ephemeral-storage "$ephemeral_storage" \
@@ -178,16 +211,37 @@ deploy-code-engine-job() {
   # scope/prefix for env property for given environment properties
   local prefix="${job}_"
 
-  if [ -n "$(get_env ce-env-configmap "")" ]; then
-    env_cm_param="--env-from-configmap $(get_env ce-env-configmap)"
-  fi
-  if [ -n "$(get_env ce-env-secret "")" ]; then
-    env_secret_param="--env-from-secret $(get_env ce-env-secret)"
+  env_from_configmap_params="$(get_env "${prefix}env-from-configmaps" "$(get_env env-from-configmaps "")")"
+  if [ -n "$env_from_configmap_params" ]; then
+    # replace ; by appropriate parameter
+    env_from_configmap_params="--env-from-configmap ${env_from_configmap_params//;/ --env-from-configmap\ }"
   fi
 
-  if ibmcloud ce job get -n "${job}" > /dev/null 2>&1; then
+  if [ -n "$(get_env cd-auto-managed-env-configmap "")" ]; then
+    env_from_configmap_params="--env-from-configmap $(get_env cd-auto-managed-env-configmap) $env_from_configmap_params"
+  fi
+
+  env_from_secret_params="$(get_env "${prefix}env-from-secrets" "$(get_env env-from-secrets "")")"
+  if [ -n "$env_from_secret_params" ]; then
+    # replace ; by appropriate parameter
+    env_from_secret_params="--env-from-secret ${env_from_secret_params//;/ --env-from-secret\ }"
+  fi
+
+  if [ -n "$(get_env cd-auto-managed-env-secret "")" ]; then
+    env_from_secret_params="--env-from-secret $(get_env cd-auto-managed-env-secret) $env_from_secret_params"
+  fi
+
+  json_file=$(mktemp)
+  if ibmcloud ce job get --name "${job}" --output json > $json_file 2>&1; then
     echo "Code Engine job with name ${job} found, updating it"
     operation="update"
+    if [ "$(get_env remove-unspecified-references-to-configuration-resources "false")" == "true" ]; then
+      # ensure synchronization of references to configmaps or secrets for the given job
+      json_spec=$(jq -c '.spec.template.containers[0]' $json_file)
+      env_from_configmap_rm_params=$(compute-env-configuration-resources-references-remove-parameters configmap "$json_spec" "$env_from_configmap_params")
+      env_from_secret_rm_params=$(compute-env-configuration-resources-references-remove-parameters secret "$json_spec" "$env_from_secret_params")
+      env_rm_params=$(compute-individual-configuration-resource-remove-parameters "$json_spec" "$env_from_configmap_params" "$env_from_secret_params")
+    fi
   else
     echo "Code Engine job with name ${job} not found, creating it"
     operation="create"
@@ -208,8 +262,17 @@ deploy-code-engine-job() {
 
   echo "   image: $image"
   echo "   registry-secret: $image_pull_secret"
-  echo "   env-from-configmap: $(get_env ce-env-configmap "")"
-  echo "   env-from-secret: $(get_env ce-env-secret "")"
+  echo "   env-from-configmap: $env_from_configmap_params"
+  echo "   env-from-secret: $env_from_secret_params"
+  if [ -n "$env_from_configmap_rm_params" ]; then
+    echo "   env-from-configmap-rm parameters: $env_from_configmap_rm_params"
+  fi
+  if [ -n "$env_from_secret_rm_params" ]; then
+    echo "   env-from-secret-rm parameters: $env_from_secret_rm_params"
+  fi
+  if [ -n "$env_rm_params" ]; then
+    echo "   env-rm parameters: $env_rm_params"
+  fi
   echo "   cpu: $cpu"
   echo "   memory: $memory"
   echo "   ephemeral-storage: $ephemeral_storage"
@@ -221,8 +284,11 @@ deploy-code-engine-job() {
   if ! ibmcloud ce job $operation -n "${job}" \
       --image "${image}" \
       --registry-secret "${image_pull_secret}" \
-      $env_cm_param \
-      $env_secret_param \
+      $env_from_configmap_params \
+      $env_from_secret_params \
+      $env_from_configmap_rm_params \
+      $env_from_secret_rm_params \
+      $env_rm_params \
       --cpu "$cpu" \
       --memory "$memory" \
       --ephemeral-storage "$ephemeral_storage" \
@@ -290,23 +356,23 @@ bind-services-to-code-engine_() {
   fi
 }
 
-setup-ce-env-configmap() {
+setup-cd-auto-managed-env-configmap() {
   local scope=$1
   # filter the pipeline/trigger non-secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the configmap for this given scope
-  # and set it as set_env ce-env-configmap
-  setup-ce-env-component_ "configmap" "$scope"
+  # and set it as set_env cd-auto-managed-env-configmap
+  setup-cd-auto-managed-env-component_ "configmap" "$scope"
 }
 
-setup-ce-env-secret() {
+setup-cd-auto-managed-env-secret() {
   local scope=$1
   # filter the pipeline/trigger secured properties with ${scope}CE_ENV prefix and create the configmap
   # if there is some properties, create/update the secret for this given scope
-  # and set it as set_env ce-env-secret
-  setup-ce-env-component_ "secret" "$scope"
+  # and set it as set_env cd-auto-managed-env-secret
+  setup-cd-auto-managed-env-component_ "secret" "$scope"
 }
 
-setup-ce-env-component_() {
+setup-cd-auto-managed-env-component_() {
   local kind=$1
   local scope=$2
   local prefix
@@ -340,25 +406,76 @@ setup-ce-env-component_() {
     done
   fi
 
+  configuration_resource_name="cd-auto-$scope-${PIPELINE_ID}-$kind"
+
   if [ -s "$props" ]; then
     # shellcheck disable=SC2086
-    if ibmcloud ce $kind get --name "$scope-$kind" > /dev/null 2>&1; then
+    if ibmcloud ce $kind get --name "$configuration_resource_name" > /dev/null 2>&1; then
       # configmap get does not fail if non existing - use the json output to ensure existing or not
-      if [[ "$kind" == "configmap" && -z "$(ibmcloud ce $kind get --name "$scope-$kind" --output json | jq -r '.metadata.name//empty')" ]]; then
-        echo "$kind $scope-$kind does not exist. Creating it"
+      if [[ "$kind" == "configmap" && -z "$(ibmcloud ce $kind get --name "$configuration_resource_name" --output json | jq -r '.metadata.name//empty')" ]]; then
+        echo "$kind $configuration_resource_name does not exist. Creating it"
         operation="create"
       else
-        echo "$kind $scope-$kind already exists. Updating it"
+        echo "$kind $configuration_resource_name already exists. Updating it"
         operation="update"
       fi
     else
-      echo "$kind $scope-$kind does not exist. Creating it"
+      echo "$kind $configuration_resource_name does not exist. Creating it"
       operation="create"
     fi
     # shellcheck disable=SC2086
-    ibmcloud ce $kind $operation --name "$scope-$kind" --from-env-file "$props"
-    set_env "ce-env-$kind" "$scope-$kind"
+    ibmcloud ce $kind $operation --name "$configuration_resource_name" --from-env-file "$props"
+    set_env "cd-auto-managed-env-$kind" "$configuration_resource_name"
   else
-    set_env "ce-env-$kind" ""
+    set_env "cd-auto-managed-env-$kind" ""
   fi
+}
+
+# function to return codeengine update parameters for configuration resources to remove
+compute-env-configuration-resources-references-remove-parameters() {
+  # configmap or secret
+  local kind=$1
+  local entity_json_spec=$2
+  local params_for_env_from_configuration_resources=$3
+  if [ "$kind" == "configmap" ]; then
+      kindOfRef="configMapRef"
+      command="--env-from-configmap-rm"
+  else
+      kindOfRef="secretRef"
+      command="--env-from-secret-rm"
+  fi
+  rm_command_parameters=""
+  current_references=$(echo $entity_json_spec | jq -r --arg kindOfRef "$kindOfRef" '.envFrom[] | select(.[$kindOfRef]) | if has("prefix") then .prefix + "=" + .[$kindOfRef].name else .[$kindOfRef].name end')
+  while read -r a_reference; do
+    # check if current reference is still present in the params_for_env_from_configuration_resources
+    if [[ "$params_for_env_from_configuration_resources" != *"$a_reference"* ]]; then
+      # current reference is not required anymore
+      if [[ $a_reference == *"="* ]]; then
+        # use only the configmap or secret name
+        rm_command_parameter=" $command $(echo $a_reference | awk -F= '{print $2}')"
+      else
+        rm_command_parameter=" $command $a_reference"
+      fi
+      rm_command_parameters="$rm_command_parameters $rm_command_parameter"
+    fi
+  done <<< "$current_references"
+  echo $rm_command_parameters
+}
+
+# function to return codeengine update parameters for individual configuration resource to remove
+compute-individual-configuration-resource-remove-parameters() {
+  local entity_json_spec=$1
+  local params_for_env_from_configmap=$2
+  local params_for_env_from_secret=$3
+
+  rm_command_parameters=""
+  current_individual_env_references=$(echo $entity_json_spec | jq -r '.env[] | select(has("valueFrom")) | (.valueFrom.configMapKeyRef//.valueFrom.secretKeyRef).key as $key | (.valueFrom.configMapKeyRef//.valueFrom.secretKeyRef).name as $resource_name | if .name == $key then $resource_name + ":" + $key else $resource_name + ":" + .name + "=" + $key end')
+  while read -r an_individual_env_reference; do
+    # check if current individual env reference is still present in the params_for_env_from_configmap or params_for_env_from_secret
+    if [[ "$params_for_env_from_configmap" != *"$an_individual_env_reference"* ]] && [[ "$params_for_env_from_secret" != *"$an_individual_env_reference"* ]]; then
+      # individual env rm command expect the environment variable name as argument
+      rm_command_parameters="$rm_command_parameters --env-rm $(echo "$an_individual_env_reference" | awk -F: '{print $2}' | awk -F= '{print $1}')"
+    fi
+  done <<< "$current_individual_env_references"
+  echo $rm_command_parameters
 }

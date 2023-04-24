@@ -4,8 +4,8 @@
 source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/code-engine-utilities.sh"
 
 echo "Deploying your code as Code Engine application...."
-setup-ce-env-configmap "$(get_env app-name)"
-setup-ce-env-secret "$(get_env app-name)"
+setup-cd-auto-managed-env-configmap "$(get_env app-name)"
+setup-cd-auto-managed-env-secret "$(get_env app-name)"
 if ! deploy-code-engine-application "$(get_env app-name)" "${IMAGE}" "${REGISTRY_SECRET_NAME}"; then
   echo "Failure in code engine application deployment. Exiting 1"
   exit 1
