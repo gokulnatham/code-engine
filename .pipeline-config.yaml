@@ -78,7 +78,7 @@ deploy:
     if [[ "$(get_env pipeline_namespace)" == *"cd"* ]]; then
       INVENTORY_PATH="$(get_env inventory-path)"
       DEPLOYMENT_DELTA_PATH="$(get_env deployment-delta-path)"
-      echo "Target environment: $(get_env environment)"
+      echo "Target environment: $(get_env target-environment)"
       echo "Deployment Delta (inventory entries with updated artifacts)"
       jq '.' "$DEPLOYMENT_DELTA_PATH"
       echo ""
