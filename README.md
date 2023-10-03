@@ -65,6 +65,10 @@ The sections below describe additional parameters (specific to these customized 
 #### containerize stage
 | Property | Default | Description | Required |
 | -------- | :-----: | ----------- | :------: |
+| `code-engine-ibmcloud-api-key` | Default to the value of `ibmcloud-api-key` | specific IBM Cloud API key to be used for the CodeEngine related operations. | 
+| `code-engine-project` |  | the name of the code engine project to use (or create)  | required |
+| `code-engine-region` | region of the toolchain | the region to create/lookup for the code engine project | |
+| `code-engine-resource-group` | resource group of the toolchain | the resource group of the code engine project | |
 | `code-engine-build-strategy` | `dockerfile` | The build strategy for the code engine component. It can be `dockerfile` or `buildpacks` | |
 | `code-engine-build-use-native-docker` | `false` | Property to opt-in for using native docker build capabilities as opposed to use Code Engine build to containerize the source. Note this setting only takes effect if the build-strategy is set to 'dockerfile'. Valid values are 'true' and 'false'. | |
 | `code-engine-build-size` | `large` | the size to use for the build, which determines the amount of resources used. Valid values include small, medium, large, xlarge. | |
@@ -79,6 +83,7 @@ The sections below describe additional parameters (specific to these customized 
 ### deployment stage
 | Property | Default | Description | Required |
 | -------- | :-----: | ----------- | :------: |
+| `code-engine-ibmcloud-api-key` | Default to the value of `ibmcloud-api-key` | specific IBM Cloud API key to be used for the CodeEngine related operations. | 
 | `code-engine-project` |  | the name of the code engine project to use (or create)  | required |
 | `code-engine-region` | region of the toolchain | the region to create/lookup for the code engine project | |
 | `code-engine-resource-group` | resource group of the toolchain | the resource group of the code engine project | |
