@@ -11,7 +11,7 @@ setup:
       set -x
     fi
     if [[ "$(get_env pipeline_namespace)" == *"pr"* ||  "$(get_env pipeline_namespace)" == *"ci"* ]]; then
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/code_setup.sh"
+      source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/code_setup.sh"
     fi
 
 test:
@@ -53,14 +53,14 @@ containerize:
       set -x
     fi
 
-    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_setup.sh"
+    source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/build_setup.sh"
     BUILD_STRATEGY="$(get_env code-engine-build-strategy "dockerfile")"
     BUILD_USE_NATIVE_DOCKER="$(get_env code-engine-build-use-native-docker "false")"
     echo "Configured build strategy: $BUILD_STRATEGY"
     if [[ "$BUILD_STRATEGY" == "dockerfile" && "$BUILD_USE_NATIVE_DOCKER" == "true" ]]; then
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_using_docker.sh"
+      source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/build_using_docker.sh"
     else
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/build_using_code_engine.sh"
+      source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/build_using_code_engine.sh"
     fi
 
 deploy:
@@ -91,22 +91,22 @@ deploy:
         set_env app-name "$(jq -r '.app_artifacts.name' ${INVENTORY_PATH}/${INVENTORY_ENTRY})"
         code_engine_deployment_type=$(jq -r '.app_artifacts.code_engine_deployment_type' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
         IMAGE=$(jq -r '.artifact' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
-        source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
+        source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_setup.sh"
         if [ "$code_engine_deployment_type" == "job" ]; then
-          source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
+          source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_job.sh"
         else
-          source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
+          source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_app.sh"
         fi
         echo ""
         echo "==============================================="
       done
     else
       IMAGE=$(load_artifact app-image name)
-      source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_setup.sh"
+      source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_setup.sh"
       if [ "$(get_env code-engine-deployment-type "application")" == "job" ]; then
-        source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_job.sh"
+        source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_job.sh"
       else
-        source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/deploy_app.sh"
+        source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_app.sh"
       fi
     fi
 
@@ -152,4 +152,4 @@ release:
 
     cd "../$(load_repo app-repo path)/$(get_env source "")"
 
-    source "${WORKSPACE}/$(get_env ONE_PIPELINE_CONFIG_DIRECTORY_NAME)/scripts/release.sh"
+    source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/release.sh"
