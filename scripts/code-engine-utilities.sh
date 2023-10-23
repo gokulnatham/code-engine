@@ -11,8 +11,6 @@ fi
 
 # shellcheck disable=SC1090,SC1091
 source "${ONE_PIPELINE_PATH}/tools/retry"
-# shellcheck disable=SC1090,SC1091
-source "${ONE_PIPELINE_PATH}/internal/tools/logging"
 
 ibmcloud_login() {
   local -r ibmcloud_api=$(get_env ibmcloud-api "https://cloud.ibm.com")
@@ -27,7 +25,7 @@ ibmcloud_login() {
   retry 5 3 ibmcloud login -a "$ibmcloud_api" --apikey @"$SECRET_PATH" --no-region
   exit_code=$?
   if [ $exit_code -ne 0 ]; then
-    error "Could not log in to IBM Cloud."
+    echo "Could not log in to IBM Cloud."
     exit $exit_code
   fi
 }
