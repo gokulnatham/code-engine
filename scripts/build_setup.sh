@@ -66,7 +66,7 @@ if [ -z "$(get_env image-name "")" ]; then
 else
   IMAGE_NAME="$(get_env image-name)"
 fi
-IMAGE_TAG="$(date +%Y%m%d%H%M%S)-$(cat /config/git-branch)-$(cat /config/git-commit)"
+IMAGE_TAG="$(date +%Y%m%d%H%M%S)-$(cat /config/git-branch  | tr -c '[:alnum:]_.-' '_')-$(cat /config/git-commit)"
 
 export IMAGE
 
