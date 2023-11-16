@@ -20,7 +20,7 @@ test:
   script: |
     #!/usr/bin/env bash
 
-    cd "../$(load_repo app-repo path)/$(get_env source "")"
+    cd "${WORKSPACE}/$(load_repo app-repo path)/$(get_env source "")"
     #npm ci
 
     # save exit code for old evidence collection
@@ -116,7 +116,7 @@ acceptance-test:
   script: |
     #!/usr/bin/env bash
 
-    cd "../$(load_repo app-repo path)/$(get_env source "")"
+    cd "${WORKSPACE}/$(load_repo app-repo path)/$(get_env source "")"
 
     #npm ci
     export APP_URL=$(get_env app-url)
@@ -150,6 +150,15 @@ release:
       set -x
     fi
 
-    cd "../$(load_repo app-repo path)/$(get_env source "")"
+    # Check the status of pipeline and then release the artifacts to inventory
+    ONE_PIPELINE_STATUS=$(get_env one-pipeline-status 0)
+    if [ "$(get_env skip-inventory-update-on-failure 1)" == "1" ]; then
+      if [ $ONE_PIPELINE_STATUS -eq 1 ]; then
+         echo "Skipping release stage as some of the pipeline stages are not successfull."
+         exit 1
+      fi
+    fi
+
+    cd "${WORKSPACE}/$(load_repo app-repo path)/$(get_env source "")"
 
     source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/release.sh"
