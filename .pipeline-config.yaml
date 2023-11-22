@@ -90,7 +90,7 @@ deploy:
         echo "Deploying $INVENTORY_ENTRY"
         set_env app-name "$(jq -r '.app_artifacts.name' ${INVENTORY_PATH}/${INVENTORY_ENTRY})"
         code_engine_deployment_type=$(jq -r '.app_artifacts.code_engine_deployment_type' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
-        IMAGE=$(jq -r '.artifact' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
+        IMAGE=$(jq -r '.provenance' ${INVENTORY_PATH}/${INVENTORY_ENTRY})
         source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_setup.sh"
         if [ "$code_engine_deployment_type" == "job" ]; then
           source "${WORKSPACE}/$PIPELINE_CONFIG_REPO_PATH/scripts/deploy_job.sh"
